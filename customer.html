@@ -29,13 +29,18 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .table-chip{background:var(–yellow);color:var(–navy);font-family:‘Fredoka One’,cursive;font-size:.82rem;padding:.22rem .7rem;border:2px solid var(–navy);}
 
 /* LOADING */
-#screen-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(–navy);min-height:100vh;}
-.splash-district{font-family:‘Boogaloo’,cursive;font-size:4rem;color:var(–cream);line-height:1;display:block;text-align:center;}
-.splash-x{display:inline-flex;align-items:center;justify-content:center;width:78px;height:78px;background:var(–yellow);transform:rotate(-6deg);margin:.5rem auto;border:3px solid var(–navy);box-shadow:4px 4px 0 rgba(0,0,0,.3);}
-.splash-x span{font-family:‘Boogaloo’,cursive;font-size:3rem;color:var(–red);}
-.splash-sub{font-family:‘Fredoka One’,cursive;font-size:1rem;color:var(–lblue);letter-spacing:.15em;text-transform:uppercase;margin-top:.25rem;text-align:center;}
-.loading-dots{display:flex;gap:.4rem;margin-top:1.5rem;}
-.loading-dots span{width:10px;height:10px;border-radius:50%;background:var(–yellow);animation:dotBounce 1.2s infinite;}
+#screen-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(–blue);min-height:100vh;position:relative;overflow:hidden;}
+#screen-loading .bg-star{position:absolute;width:200px;height:200px;background:var(–red);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);top:-55px;left:-65px;opacity:.85;}
+#screen-loading .bg-sun{position:absolute;width:150px;height:150px;border-radius:50%;background:var(–yellow);top:-35px;right:-25px;opacity:.75;}
+#screen-loading .bg-cloud{position:absolute;bottom:80px;right:-10px;width:110px;height:50px;background:rgba(255,255,255,.45);border-radius:50px;}
+.splash-paper{background:var(–cream);padding:.9rem 2.2rem 1.1rem;position:relative;z-index:2;transform:rotate(-1.5deg);box-shadow:5px 5px 0 rgba(0,0,0,.2);margin-bottom:-.2rem;border-top:1px solid #d4c8a8;border-bottom:2px solid #c8b898;}
+.splash-district{font-family:‘Boogaloo’,cursive;font-size:3.8rem;color:var(–navy);line-height:1;display:block;text-align:center;}
+.splash-x-wrap{display:flex;justify-content:center;position:relative;z-index:2;}
+.splash-x{display:inline-flex;align-items:center;justify-content:center;width:82px;height:82px;background:var(–yellow);transform:rotate(-7deg);border:3px solid var(–navy);box-shadow:5px 5px 0 rgba(0,0,0,.25);margin-top:.2rem;}
+.splash-x span{font-family:‘Boogaloo’,cursive;font-size:3.2rem;color:var(–red);line-height:1;}
+.splash-sub{font-family:‘Fredoka One’,cursive;font-size:.9rem;color:var(–navy);letter-spacing:.15em;text-transform:uppercase;margin-top:.85rem;text-align:center;background:var(–yellow);padding:.2rem .85rem;display:inline-block;transform:rotate(.5deg);position:relative;z-index:2;border:2px solid var(–navy);}
+.loading-dots{display:flex;gap:.4rem;margin-top:1.5rem;position:relative;z-index:2;}
+.loading-dots span{width:11px;height:11px;border-radius:50%;background:var(–navy);animation:dotBounce 1.2s infinite;}
 .loading-dots span:nth-child(2){animation-delay:.2s;}
 .loading-dots span:nth-child(3){animation-delay:.4s;}
 @keyframes dotBounce{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.2);opacity:1}}
@@ -52,7 +57,38 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 
 /* RESTAURANTS */
 #screen-restaurants{background:var(–navy);padding-bottom:5rem;}
-.section-head{font-family:‘Boogaloo’,cursive;font-size:1.45rem;color:var(–cream);padding:.9rem 1rem .25rem;display:flex;align-items:center;gap:.5rem;}
+/* hero banner at top of restaurant screen */
+.rest-hero-banner{
+background:var(–blue);
+padding:1.1rem 1rem .9rem;
+position:relative;overflow:hidden;
+border-bottom:3px solid var(–yellow);
+}
+.rest-hero-banner::before{
+content:’’;position:absolute;
+width:130px;height:130px;
+background:var(–red);
+clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+right:-30px;top:-30px;opacity:.6;
+}
+.rest-hero-banner::after{
+content:’’;position:absolute;
+width:90px;height:90px;border-radius:50%;
+background:var(–yellow);
+left:-20px;bottom:-25px;opacity:.4;
+}
+.rhb-inner{position:relative;z-index:2;display:flex;align-items:center;gap:.75rem;}
+.rhb-xbadge{
+display:inline-flex;align-items:center;justify-content:center;
+width:52px;height:52px;background:var(–yellow);
+transform:rotate(-7deg);border:3px solid var(–navy);
+box-shadow:3px 3px 0 rgba(0,0,0,.3);flex-shrink:0;
+}
+.rhb-xbadge span{font-family:‘Boogaloo’,cursive;font-size:2rem;color:var(–red);line-height:1;}
+.rhb-text{}
+.rhb-title{font-family:‘Boogaloo’,cursive;font-size:1.6rem;color:var(–cream);line-height:1;}
+.rhb-sub{font-size:.72rem;font-weight:700;color:var(–yellow);text-transform:uppercase;letter-spacing:.08em;margin-top:.1rem;}
+.section-head{font-family:‘Boogaloo’,cursive;font-size:1.25rem;color:var(–yellow);padding:.75rem 1rem .2rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px dashed rgba(255,255,255,.12);margin-bottom:.25rem;}
 .rest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;padding:.5rem 1rem 1rem;}
 .rest-card{background:var(–cream);border:3px solid var(–navy);box-shadow:5px 5px 0 var(–navy);cursor:pointer;overflow:hidden;transition:transform .18s,box-shadow .18s;animation:cardIn .3s ease both;}
 @keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -61,8 +97,8 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .rest-card.paused{opacity:.5;pointer-events:none;}
 .rest-hero{height:86px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;}
 .rest-info{padding:.6rem .7rem .75rem;}
-.rest-name{font-family:‘Boogaloo’,cursive;font-size:1rem;color:var(–navy);line-height:1.1;}
-.rest-cat{font-size:.7rem;font-weight:700;color:#666;margin-top:.12rem;}
+.rest-name{font-family:‘Boogaloo’,cursive;font-size:1rem;color:var(–navy);line-height:1.1;font-weight:900;}
+.rest-cat{font-size:.7rem;font-weight:700;color:#444;margin-top:.12rem;}
 .rest-time{font-size:.68rem;color:var(–red);font-weight:800;margin-top:.2rem;}
 .rest-paused-tag{font-size:.65rem;background:var(–red);color:#fff;font-weight:800;padding:.1rem .4rem;display:inline-block;margin-top:.2rem;}
 
@@ -70,20 +106,20 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .call-waiter-btn{
 display:flex;align-items:center;gap:.5rem;justify-content:center;
 margin:.75rem 1rem .25rem;
-background:transparent;border:2px solid rgba(255,255,255,.2);color:var(–lblue);
+background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.35);color:#fff;
 font-family:‘Fredoka One’,cursive;font-size:.9rem;padding:.55rem;cursor:pointer;
 transition:background .15s,border-color .15s;width:calc(100% - 2rem);
 }
-.call-waiter-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.35);}
-.call-waiter-btn:active{background:rgba(255,255,255,.15);}
-.call-waiter-btn.sent{color:var(–green);border-color:var(–green);}
+.call-waiter-btn:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);}
+.call-waiter-btn:active{background:rgba(255,255,255,.22);}
+.call-waiter-btn.sent{color:var(–green);border-color:var(–green);background:rgba(39,174,96,.15);}
 
 /* MENU */
 #screen-menu{background:var(–navy);padding-bottom:6rem;}
 .menu-hero{padding:1rem;display:flex;align-items:center;gap:.9rem;border-bottom:2px dashed rgba(255,255,255,.12);}
 .mh-emoji{font-size:2.4rem;flex-shrink:0;}
-.mh-name{font-family:‘Boogaloo’,cursive;font-size:1.5rem;color:var(–cream);line-height:1.1;}
-.mh-cat{font-size:.75rem;font-weight:700;color:var(–lblue);margin-top:.12rem;}
+.mh-name{font-family:‘Boogaloo’,cursive;font-size:1.5rem;color:#fff;line-height:1.1;}
+.mh-cat{font-size:.75rem;font-weight:700;color:var(–yellow);margin-top:.12rem;}
 .back-pill{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);color:var(–cream);font-family:‘Nunito’,sans-serif;font-weight:700;font-size:.78rem;padding:.3rem .7rem;cursor:pointer;transition:background .15s;margin-left:auto;flex-shrink:0;}
 .back-pill:hover{background:rgba(255,255,255,.15);}
 .menu-item{background:var(–cream);margin:.45rem 1rem;border:2px solid var(–navy);box-shadow:3px 3px 0 var(–navy);display:flex;align-items:center;gap:.7rem;padding:.8rem;}
@@ -161,9 +197,9 @@ transition:background .15s,border-color .15s;width:calc(100% - 2rem);
 #screen-tracking{background:var(–navy);padding-bottom:3rem;}
 .track-wrap{padding:1.1rem;}
 .track-id{font-family:‘Boogaloo’,cursive;font-size:2.6rem;color:var(–yellow);text-align:center;letter-spacing:.04em;}
-.track-sub{text-align:center;color:rgba(255,255,255,.4);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem;}
+.track-sub{text-align:center;color:var(–yellow);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem;}
 .track-meta{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1.1rem;}
-.meta-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:var(–lblue);font-size:.75rem;font-weight:700;padding:.22rem .65rem;}
+.meta-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.75rem;font-weight:700;padding:.22rem .65rem;}
 
 /* stepper */
 .stepper{display:flex;align-items:center;justify-content:center;gap:0;margin:1.1rem 0;}
@@ -172,13 +208,13 @@ transition:background .15s,border-color .15s;width:calc(100% - 2rem);
 .step-dot.done{background:var(–green);border-color:var(–green);box-shadow:0 0 0 4px rgba(39,174,96,.18);}
 .step-dot.active{background:var(–yellow);border-color:var(–yellow);box-shadow:0 0 0 4px rgba(245,197,24,.22);animation:stepPulse 1.8s infinite;}
 @keyframes stepPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.step-lbl{font-size:.66rem;font-weight:800;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.step-lbl{font-size:.66rem;font-weight:800;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
 .step-lbl.active{color:var(–yellow);}
 .step-lbl.done{color:var(–green);}
 .step-line{flex:1;height:3px;background:rgba(255,255,255,.1);transition:background .4s;max-width:36px;}
 .step-line.done{background:var(–green);}
 
-.status-banner{background:rgba(255,255,255,.05);border-left:4px solid var(–yellow);padding:.7rem .9rem;margin:0 0 1.1rem;font-family:‘Fredoka One’,cursive;font-size:.9rem;color:var(–cream);transition:border-color .4s;}
+.status-banner{background:rgba(255,255,255,.1);border-left:4px solid var(–yellow);padding:.7rem .9rem;margin:0 0 1.1rem;font-family:‘Fredoka One’,cursive;font-size:.9rem;color:#fff;transition:border-color .4s;}
 .status-banner.preparing{border-color:var(–orange);}
 .status-banner.delivered{border-color:var(–green);}
 .status-banner.cancelled{border-color:var(–red);color:var(–red);}
@@ -213,8 +249,15 @@ transition:background .15s,border-color .15s;width:calc(100% - 2rem);
 <!-- Loading -->
 
 <div id="screen-loading" class="screen active">
-  <div class="splash-district">District</div>
-  <div style="display:flex;justify-content:center;"><div class="splash-x"><span>X</span></div></div>
+  <div class="bg-star"></div>
+  <div class="bg-sun"></div>
+  <div class="bg-cloud"></div>
+  <div class="splash-paper">
+    <span class="splash-district">District</span>
+  </div>
+  <div class="splash-x-wrap">
+    <div class="splash-x"><span>X</span></div>
+  </div>
   <div class="splash-sub">Food &amp; Beverages</div>
   <div class="loading-dots"><span></span><span></span><span></span></div>
 </div>
@@ -235,8 +278,18 @@ transition:background .15s,border-color .15s;width:calc(100% - 2rem);
     <div class="table-chip" id="chip1">Table –</div>
   </div>
   <div class="paused-banner" id="allPausedBanner">⏸ Ordering is temporarily paused. Please wait…</div>
+  <!-- Hero Banner -->
+  <div class="rest-hero-banner">
+    <div class="rhb-inner">
+      <div class="rhb-xbadge"><span>X</span></div>
+      <div class="rhb-text">
+        <div class="rhb-title">District X</div>
+        <div class="rhb-sub">Food &amp; Beverages · Team Events</div>
+      </div>
+    </div>
+  </div>
   <button class="call-waiter-btn" id="callWaiterBtn" onclick="callWaiter()">🛎️ Call Waiter</button>
-  <div class="section-head">🍽️ Restaurants</div>
+  <div class="section-head">🍽️ Choose a Restaurant</div>
   <div class="rest-grid" id="restGrid"></div>
 </div>
 
