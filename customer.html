@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>DISTRICT X — Order</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+:root{--navy:#1B2A4A;--blue:#5B8DD9;--red:#E8412A;--yellow:#F5C518;--cream:#F2E8D5;--green:#27AE60;--orange:#F39C12;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:var(--navy);font-family:'Nunito',sans-serif;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;}.screen.active{display:block;}
+/* LOADING */
+#screen-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--blue);position:relative;overflow:hidden;}
+.sl-star{position:absolute;width:200px;height:200px;background:var(--red);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);top:-55px;left:-65px;opacity:.8;}
+.sl-sun{position:absolute;width:140px;height:140px;border-radius:50%;background:var(--yellow);top:-30px;right:-20px;opacity:.75;}
+.sl-cloud{position:absolute;bottom:70px;right:-15px;width:100px;height:45px;background:rgba(255,255,255,.4);border-radius:40px;}
+.sl-paper{background:var(--cream);padding:.8rem 2rem 1rem;position:relative;z-index:2;transform:rotate(-1.5deg);box-shadow:5px 5px 0 rgba(0,0,0,.18);border-top:2px solid #d4c8a8;border-bottom:2px solid #c0b090;}
+.sl-district{font-family:'Boogaloo',cursive;font-size:3.8rem;color:var(--navy);line-height:1;display:block;text-align:center;}
+.sl-xwrap{display:flex;justify-content:center;position:relative;z-index:2;margin-top:.1rem;}
+.sl-x{display:inline-flex;align-items:center;justify-content:center;width:82px;height:82px;background:var(--yellow);transform:rotate(-7deg);border:3px solid var(--navy);box-shadow:5px 5px 0 rgba(0,0,0,.22);}
+.sl-x span{font-family:'Boogaloo',cursive;font-size:3.2rem;color:var(--red);line-height:1;}
+.sl-sub{font-family:'Fredoka One',cursive;font-size:.9rem;color:var(--navy);letter-spacing:.14em;text-transform:uppercase;margin-top:.8rem;background:var(--yellow);padding:.22rem .85rem;display:inline-block;transform:rotate(.5deg);position:relative;z-index:2;border:2px solid var(--navy);}
+.sl-dots{display:flex;gap:.4rem;margin-top:1.4rem;position:relative;z-index:2;}
+.sl-dots span{width:11px;height:11px;border-radius:50%;background:var(--navy);animation:dotB 1.2s infinite;}
+.sl-dots span:nth-child(2){animation-delay:.2s;}.sl-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes dotB{0%,80%,100%{transform:scale(.8);opacity:.35}40%{transform:scale(1.2);opacity:1}}
+/* ERROR */
+#screen-error{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;background:var(--navy);}
+.err-icon{font-size:3rem;margin-bottom:1rem;}.err-title{font-family:'Boogaloo',cursive;font-size:2rem;color:var(--red);}
+.err-msg{color:#A8C8F0;font-weight:700;margin-top:.5rem;font-size:.9rem;max-width:300px;line-height:1.6;}
+/* HEADER */
+.dx-header{background:var(--navy);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--yellow);position:sticky;top:0;z-index:100;}
+.dx-logo{font-family:'Boogaloo',cursive;font-size:1.45rem;color:var(--cream);}
+.dx-logo em{color:var(--yellow);font-style:normal;}
+.tbl-chip{background:var(--yellow);color:var(--navy);font-family:'Fredoka One',cursive;font-size:.82rem;padding:.22rem .7rem;border:2px solid var(--navy);}
+/* PAUSED */
+.paused-banner{background:var(--red);color:#fff;text-align:center;padding:.6rem;font-family:'Fredoka One',cursive;font-size:.9rem;display:none;}
+.paused-banner.show{display:block;}
+/* RESTAURANTS */
+#screen-restaurants{background:var(--navy);padding-bottom:5rem;}
+.hero-banner{background:var(--blue);padding:1rem;position:relative;overflow:hidden;border-bottom:3px solid var(--yellow);}
+.hb-star{position:absolute;width:120px;height:120px;background:var(--red);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);right:-25px;top:-25px;opacity:.55;}
+.hb-sun{position:absolute;width:80px;height:80px;border-radius:50%;background:var(--yellow);left:-20px;bottom:-25px;opacity:.35;}
+.hb-inner{position:relative;z-index:2;display:flex;align-items:center;gap:.75rem;}
+.hb-badge{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;background:var(--yellow);transform:rotate(-7deg);border:3px solid var(--navy);box-shadow:3px 3px 0 rgba(0,0,0,.25);flex-shrink:0;}
+.hb-badge span{font-family:'Boogaloo',cursive;font-size:2.1rem;color:var(--red);line-height:1;}
+.hb-title{font-family:'Boogaloo',cursive;font-size:1.65rem;color:#fff;line-height:1.1;}
+.hb-sub{font-size:.72rem;font-weight:800;color:var(--yellow);text-transform:uppercase;letter-spacing:.08em;margin-top:.18rem;}
+.call-btn{display:flex;align-items:center;gap:.5rem;justify-content:center;margin:.7rem 1rem .2rem;width:calc(100% - 2rem);background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.3);color:#fff;font-family:'Fredoka One',cursive;font-size:.9rem;padding:.55rem;cursor:pointer;transition:background .15s;}
+.call-btn:hover{background:rgba(255,255,255,.18);}.call-btn.sent{color:var(--green);border-color:var(--green);}
+.section-head{font-family:'Boogaloo',cursive;font-size:1.2rem;color:var(--yellow);padding:.7rem 1rem .15rem;display:flex;align-items:center;gap:.4rem;border-bottom:1px dashed rgba(255,255,255,.12);margin-bottom:.2rem;}
+.rest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;padding:.5rem 1rem 1rem;}
+.rest-card{background:var(--cream);border:3px solid var(--navy);box-shadow:5px 5px 0 var(--navy);cursor:pointer;overflow:hidden;transition:transform .18s,box-shadow .18s;animation:cIn .3s ease both;}
+@keyframes cIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.rest-card:active{transform:scale(.97);}.rest-card.paused{opacity:.5;pointer-events:none;}
+.rc-hero{height:88px;display:flex;align-items:center;justify-content:center;font-size:2.9rem;}
+.rc-info{padding:.6rem .7rem .75rem;}
+.rc-name{font-family:'Boogaloo',cursive;font-size:1.05rem;color:var(--navy);line-height:1.1;font-weight:900;}
+.rc-cat{font-size:.7rem;font-weight:700;color:#555;margin-top:.1rem;}
+.rc-time{font-size:.68rem;color:var(--red);font-weight:800;margin-top:.18rem;}
+.rc-paused{font-size:.63rem;background:var(--red);color:#fff;font-weight:800;padding:.1rem .35rem;display:inline-block;margin-top:.2rem;}
+/* MENU */
+#screen-menu{background:var(--navy);padding-bottom:6rem;}
+.menu-top{padding:.9rem 1rem;display:flex;align-items:center;gap:.9rem;border-bottom:2px dashed rgba(255,255,255,.15);}
+.mt-emoji{font-size:2.4rem;flex-shrink:0;}
+.mt-name{font-family:'Boogaloo',cursive;font-size:1.5rem;color:#fff;line-height:1.1;}
+.mt-cat{font-size:.75rem;font-weight:700;color:var(--yellow);margin-top:.1rem;}
+.back-btn{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-family:'Nunito',sans-serif;font-weight:700;font-size:.78rem;padding:.3rem .7rem;cursor:pointer;transition:background .15s;margin-left:auto;flex-shrink:0;}
+.back-btn:hover{background:rgba(255,255,255,.2);}
+.menu-item{background:var(--cream);margin:.45rem 1rem;border:2px solid var(--navy);box-shadow:3px 3px 0 var(--navy);display:flex;align-items:center;gap:.7rem;padding:.8rem;}
+.mi-emoji{font-size:1.65rem;flex-shrink:0;width:34px;text-align:center;}
+.mi-info{flex:1;min-width:0;}
+.mi-name{font-family:'Fredoka One',cursive;font-size:.92rem;color:var(--navy);}
+.mi-desc{font-size:.7rem;color:#555;margin-top:.1rem;line-height:1.4;}
+.mi-price{font-family:'Boogaloo',cursive;font-size:1.2rem;color:var(--red);flex-shrink:0;}
+.mi-ctrl{display:flex;align-items:center;gap:.3rem;flex-shrink:0;}
+.qty-btn{width:30px;height:30px;background:var(--navy);color:#fff;border:none;cursor:pointer;font-size:1.1rem;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:'Boogaloo',cursive;}
+.qty-num{font-family:'Boogaloo',cursive;font-size:1.1rem;color:var(--navy);min-width:20px;text-align:center;}
+/* CART FAB */
+.cart-fab{position:fixed;bottom:1.1rem;left:50%;transform:translateX(-50%);background:var(--yellow);color:var(--navy);font-family:'Fredoka One',cursive;font-size:.95rem;padding:.7rem 1.75rem;border:3px solid var(--navy);box-shadow:5px 5px 0 var(--navy);cursor:pointer;display:none;align-items:center;gap:.5rem;z-index:90;white-space:nowrap;}
+.cart-fab.visible{display:flex;}.cart-fab:active{transform:translateX(-50%) scale(.97);}
+.cf-pill{background:var(--red);color:#fff;font-size:.72rem;padding:.08rem .4rem;border:2px solid var(--navy);font-family:'Nunito',sans-serif;font-weight:900;}
+/* CART SHEET */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:flex-end;}
+.overlay.open{display:flex;}
+.sheet{background:var(--cream);width:100%;max-height:90vh;border-top:4px solid var(--navy);overflow-y:auto;animation:sUp .27s ease;}
+@keyframes sUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-head{background:var(--navy);padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.sheet-title{font-family:'Boogaloo',cursive;font-size:1.35rem;color:var(--yellow);}
+.sheet-close{background:none;border:2px solid rgba(255,255,255,.3);color:#fff;width:30px;height:30px;cursor:pointer;font-size:.95rem;}
+.cart-row{display:flex;align-items:center;gap:.65rem;padding:.65rem 1.1rem;border-bottom:1px dashed #ccc;}
+.cr-emoji{font-size:1.2rem;flex-shrink:0;}.cr-info{flex:1;}
+.cr-name{font-weight:700;font-size:.85rem;color:var(--navy);}.cr-rest{font-size:.68rem;color:#777;}
+.cr-rm{background:none;border:none;color:#bbb;cursor:pointer;font-size:.9rem;flex-shrink:0;}
+.cr-rm:hover{color:var(--red);}
+.cr-price{font-family:'Boogaloo',cursive;font-size:1.05rem;color:var(--red);flex-shrink:0;}
+.notes-wrap{padding:.8rem 1.1rem;border-bottom:2px dashed #ccc;}
+.notes-lbl{font-family:'Fredoka One',cursive;font-size:.88rem;color:var(--navy);margin-bottom:.35rem;display:block;}
+.notes-ta{width:100%;border:2px solid var(--navy);background:#fff;padding:.5rem .65rem;font-family:'Nunito',sans-serif;font-size:.85rem;color:var(--navy);resize:none;outline:none;}
+.cart-foot{padding:.85rem 1.1rem;background:#e4d8c0;position:sticky;bottom:0;}
+.cf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;}
+.cf-lbl{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--navy);}
+.cf-amt{font-family:'Boogaloo',cursive;font-size:1.9rem;color:var(--red);}
+.cash-note{background:var(--navy);color:var(--cream);font-size:.75rem;font-weight:700;padding:.4rem .65rem;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem;}
+.review-btn{width:100%;background:var(--yellow);color:var(--navy);font-family:'Fredoka One',cursive;font-size:1.05rem;padding:.8rem;border:3px solid var(--navy);box-shadow:4px 4px 0 var(--navy);cursor:pointer;}
+/* CONFIRM */
+#screen-confirm{background:var(--navy);padding-bottom:3rem;}
+.confirm-wrap{padding:1rem;}
+.confirm-card{background:var(--cream);border:3px solid var(--navy);box-shadow:6px 6px 0 var(--navy);overflow:hidden;}
+.confirm-hd{background:var(--yellow);padding:.85rem 1.1rem;border-bottom:3px solid var(--navy);}
+.confirm-hd h2{font-family:'Boogaloo',cursive;font-size:1.5rem;color:var(--navy);}
+.confirm-hd p{font-size:.78rem;color:#555;font-weight:700;margin-top:.1rem;}
+.confirm-sec{padding:.7rem 1.1rem;border-bottom:1px dashed #ccc;}
+.cs-lbl{font-family:'Fredoka One',cursive;font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;}
+.ci-row{display:flex;justify-content:space-between;align-items:flex-start;padding:.22rem 0;font-size:.85rem;color:var(--navy);}
+.ci-left{display:flex;flex-direction:column;font-weight:700;}
+.ci-rest{font-size:.68rem;color:#888;font-weight:400;}
+.confirm-notes{font-size:.82rem;color:#666;font-style:italic;padding:.6rem 1.1rem;background:#f5ece0;border-bottom:1px dashed #ccc;}
+.confirm-total{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1.1rem;background:#e4d8c0;}
+.ct-lbl{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--navy);}
+.ct-amt{font-family:'Boogaloo',cursive;font-size:2rem;color:var(--red);}
+.confirm-actions{display:flex;gap:.75rem;padding:.9rem 1.1rem;}
+.btn-edit{flex:1;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.25);color:#fff;font-family:'Fredoka One',cursive;font-size:.95rem;padding:.7rem;cursor:pointer;}
+.btn-place{flex:2;background:var(--red);color:#fff;font-family:'Fredoka One',cursive;font-size:1rem;padding:.7rem;border:3px solid var(--navy);box-shadow:4px 4px 0 var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.btn-place:disabled{opacity:.55;cursor:not-allowed;box-shadow:2px 2px 0 var(--navy);}
+/* TRACKING */
+#screen-tracking{background:var(--navy);padding-bottom:3rem;}
+.track-wrap{padding:1.1rem;}
+.track-id{font-family:'Boogaloo',cursive;font-size:2.8rem;color:var(--yellow);text-align:center;letter-spacing:.04em;}
+.track-hint{text-align:center;color:var(--yellow);opacity:.7;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.85rem;}
+.track-chips{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1.1rem;}
+.t-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:.75rem;font-weight:700;padding:.22rem .65rem;}
+.stepper{display:flex;align-items:center;justify-content:center;margin:1.1rem 0;}
+.step{display:flex;flex-direction:column;align-items:center;gap:.35rem;flex:1;max-width:88px;}
+.step-dot{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:1.25rem;transition:all .4s ease;}
+.step-dot.done{background:var(--green);border-color:var(--green);}
+.step-dot.active{background:var(--yellow);border-color:var(--yellow);animation:sP 1.8s infinite;}
+@keyframes sP{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.step-lbl{font-size:.66rem;font-weight:800;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.step-lbl.active{color:var(--yellow);}.step-lbl.done{color:var(--green);}
+.step-line{flex:1;height:3px;background:rgba(255,255,255,.12);transition:background .4s;max-width:36px;}
+.step-line.done{background:var(--green);}
+.status-msg{background:rgba(255,255,255,.1);border-left:4px solid var(--yellow);padding:.7rem .9rem;margin:0 0 1.1rem;font-family:'Fredoka One',cursive;font-size:.9rem;color:#fff;transition:border-color .4s;}
+.status-msg.preparing{border-color:var(--orange);}.status-msg.delivered{border-color:var(--green);}.status-msg.cancelled{border-color:var(--red);color:var(--red);}
+.summary-card{background:var(--cream);border:3px solid var(--navy);box-shadow:5px 5px 0 var(--navy);padding:.9rem;}
+.sc-title{font-family:'Boogaloo',cursive;font-size:1.05rem;color:var(--navy);margin-bottom:.5rem;border-bottom:1px dashed #ccc;padding-bottom:.35rem;}
+.sc-row{display:flex;justify-content:space-between;font-size:.82rem;padding:.22rem 0;border-bottom:1px dashed #e8dcc8;color:var(--navy);}
+.sc-total{display:flex;justify-content:space-between;padding-top:.45rem;}
+.sc-total span:first-child{font-family:'Fredoka One',cursive;font-size:.95rem;color:var(--navy);}
+.sc-total span:last-child{font-family:'Boogaloo',cursive;font-size:1.35rem;color:var(--red);}
+.sc-notes{font-size:.75rem;color:#777;font-style:italic;padding:.45rem .1rem;border-top:1px dashed #ccc;margin-top:.3rem;}
+.new-order-btn{display:block;width:100%;margin-top:.9rem;background:var(--yellow);color:var(--navy);font-family:'Fredoka One',cursive;font-size:1rem;padding:.7rem;border:3px solid var(--navy);box-shadow:4px 4px 0 var(--navy);cursor:pointer;text-align:center;}
+/* TOAST */
+.toast-wrap{position:fixed;top:68px;right:.75rem;z-index:500;display:flex;flex-direction:column;gap:.35rem;pointer-events:none;}
+.toast{background:var(--navy);border:2px solid var(--yellow);color:#fff;font-family:'Fredoka One',cursive;font-size:.82rem;padding:.55rem .85rem;box-shadow:3px 3px 0 var(--yellow);max-width:255px;animation:tIn .22s ease;}
+.toast.green{border-color:var(--green);box-shadow:3px 3px 0 var(--green);}
+.toast.red{border-color:var(--red);box-shadow:3px 3px 0 var(--red);}
+.toast.blue{border-color:#5B8DD9;box-shadow:3px 3px 0 #5B8DD9;}
+@keyframes tIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--yellow);border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="screen-loading" class="screen active">
+  <div class="sl-star"></div><div class="sl-sun"></div><div class="sl-cloud"></div>
+  <div class="sl-paper"><span class="sl-district">District</span></div>
+  <div class="sl-xwrap"><div class="sl-x"><span>X</span></div></div>
+  <div class="sl-sub">Food &amp; Beverages</div>
+  <div class="sl-dots"><span></span><span></span><span></span></div>
+</div>
+<div id="screen-error" class="screen">
+  <div class="err-icon">⚠️</div>
+  <div class="err-title">Invalid QR Code</div>
+  <div class="err-msg" id="errMsg">Please scan the QR code on your table.</div>
+</div>
+<div id="screen-restaurants" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <em>X</em></div>
+    <div class="tbl-chip" id="chip1">Table –</div>
+  </div>
+  <div class="paused-banner" id="allPausedBanner">⏸ Ordering is temporarily paused. Please wait…</div>
+  <div class="hero-banner">
+    <div class="hb-star"></div><div class="hb-sun"></div>
+    <div class="hb-inner">
+      <div class="hb-badge"><span>X</span></div>
+      <div><div class="hb-title">District X</div><div class="hb-sub">Food &amp; Beverages · Team Events</div></div>
+    </div>
+  </div>
+  <button class="call-btn" id="callWaiterBtn" onclick="callWaiter()">🛎️ Call Waiter</button>
+  <div class="section-head">🍽️ Choose a Restaurant</div>
+  <div class="rest-grid" id="restGrid"></div>
+</div>
+<div id="screen-menu" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <em>X</em></div>
+    <div class="tbl-chip" id="chip2">Table –</div>
+  </div>
+  <div class="menu-top">
+    <span class="mt-emoji" id="menuEmoji">🍔</span>
+    <div><div class="mt-name" id="menuName">–</div><div class="mt-cat" id="menuCat">–</div></div>
+    <button class="back-btn" onclick="showScreen('restaurants')">← Back</button>
+  </div>
+  <div id="menuList"></div>
+</div>
+<div class="overlay" id="cartSheet">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">🛒 Your Cart</div><button class="sheet-close" onclick="closeCart()">✕</button></div>
+    <div id="cartList"></div>
+    <div class="notes-wrap">
+      <label class="notes-lbl">📝 Order Notes (optional)</label>
+      <textarea class="notes-ta" id="notesInput" rows="2" placeholder="e.g. No onions, extra sauce, allergies…"></textarea>
+    </div>
+    <div class="cart-foot">
+      <div class="cf-row"><span class="cf-lbl">Total</span><span class="cf-amt" id="cartAmt">SAR 0</span></div>
+      <div class="cash-note">💵 Payment by cash / POS when delivered</div>
+      <button class="review-btn" onclick="showConfirm()">📋 Review &amp; Confirm Order</button>
+    </div>
+  </div>
+</div>
+<div class="cart-fab" id="cartFab" onclick="openCart()">
+  🛒 View Cart <span class="cf-pill" id="fabCount">0</span>
+  <span style="font-family:'Boogaloo',cursive;color:var(--red);" id="fabTotal">SAR 0</span>
+</div>
+<div id="screen-confirm" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <em>X</em></div>
+    <div class="tbl-chip" id="chip3">Table –</div>
+  </div>
+  <div class="confirm-wrap">
+    <div class="confirm-card">
+      <div class="confirm-hd"><h2>📋 Confirm Your Order</h2><p>Review everything before placing</p></div>
+      <div class="confirm-sec"><div class="cs-lbl">Table</div><div style="font-family:'Boogaloo',cursive;font-size:1.2rem;color:var(--navy);" id="confirmTable">–</div></div>
+      <div class="confirm-sec"><div class="cs-lbl">Items</div><div id="confirmItems"></div></div>
+      <div id="confirmNotes" class="confirm-notes" style="display:none;"></div>
+      <div class="confirm-total"><span class="ct-lbl">Total</span><span class="ct-amt" id="confirmTotal">SAR 0</span></div>
+      <div class="confirm-actions">
+        <button class="btn-edit" onclick="showScreen('restaurants');openCart()">← Edit</button>
+        <button class="btn-place" id="placeBtn" onclick="placeOrder()">🚀 Place Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="screen-tracking" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <em>X</em></div>
+    <div class="tbl-chip" id="chip4">Table –</div>
+  </div>
+  <div class="track-wrap">
+    <div class="track-id" id="trackId">DX-000</div>
+    <div class="track-hint">Your Order ID · Show this to staff</div>
+    <div class="track-chips" id="trackChips"></div>
+    <div class="stepper">
+      <div class="step"><div class="step-dot active" id="dot0">📋</div><div class="step-lbl active" id="lbl0">Pending</div></div>
+      <div class="step-line" id="line0"></div>
+      <div class="step"><div class="step-dot" id="dot1">👨‍🍳</div><div class="step-lbl" id="lbl1">Preparing</div></div>
+      <div class="step-line" id="line1"></div>
+      <div class="step"><div class="step-dot" id="dot2">✅</div><div class="step-lbl" id="lbl2">Delivered</div></div>
+    </div>
+    <div class="status-msg" id="statusMsg">📋 Order placed! Waiting to be accepted…</div>
+    <div class="summary-card" id="summaryCard"></div>
+    <button class="new-order-btn" onclick="startNewOrder()">🛒 Place Another Order</button>
+  </div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyAdQKAD2ORPRnlxtIU01ErQtUl8DNg2brc",authDomain:"district-x-test.firebaseapp.com",databaseURL:"https://district-x-test-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"district-x-test",storageBucket:"district-x-test.firebasestorage.app",messagingSenderId:"532943192712",appId:"1:532943192712:web:90e487d935c93d5eef953d"};
+const RESTAURANTS=[{id:'r1',name:'Burger District',emoji:'🍔',cat:'American Grill',time:'15–20 min',color:'#E8412A',menu:[{id:'r1i1',name:'Classic Smash Burger',desc:'Double patty, cheddar, pickles, secret sauce',price:45,emoji:'🍔'},{id:'r1i2',name:'BBQ Bacon Burger',desc:'Crispy bacon, smoked BBQ, caramelised onion',price:52,emoji:'🥓'},{id:'r1i3',name:'Crispy Chicken Sando',desc:'Buttermilk fried chicken, slaw, jalapeño mayo',price:48,emoji:'🍗'},{id:'r1i4',name:'Loaded Fries',desc:'Cheese sauce, jalapeños, sour cream',price:25,emoji:'🍟'},{id:'r1i5',name:'Onion Rings',desc:'Beer battered, chipotle dip',price:22,emoji:'🧅'}]},{id:'r2',name:'Taco Stand',emoji:'🌮',cat:'Mexican Street Food',time:'10–15 min',color:'#D4A017',menu:[{id:'r2i1',name:'Street Tacos x3',desc:'Carne asada, cilantro, onion, lime',price:40,emoji:'🌮'},{id:'r2i2',name:'Chicken Quesadilla',desc:'Melted cheese, grilled chicken, pico de gallo',price:38,emoji:'🫓'},{id:'r2i3',name:'Nachos Grande',desc:'Tortilla chips, beans, salsa, jalapeños, guac',price:44,emoji:'🧀'},{id:'r2i4',name:'Elote (Corn)',desc:'Street corn, mayo, cotija, chili',price:20,emoji:'🌽'},{id:'r2i5',name:'Horchata',desc:'Chilled rice milk, cinnamon',price:15,emoji:'🥛'}]},{id:'r3',name:'Noodle House',emoji:'🍜',cat:'Asian Fusion',time:'15–25 min',color:'#5B8DD9',menu:[{id:'r3i1',name:'Tonkotsu Ramen',desc:'Rich pork broth, chashu, soft egg, nori',price:55,emoji:'🍜'},{id:'r3i2',name:'Pad Thai',desc:'Rice noodles, shrimp, tamarind, peanuts',price:48,emoji:'🍝'},{id:'r3i3',name:'Gyoza (6 pcs)',desc:'Pan-fried pork dumplings, ponzu sauce',price:32,emoji:'🥟'},{id:'r3i4',name:'Chicken Katsu',desc:'Breaded chicken, tonkatsu sauce, rice',price:50,emoji:'🍱'},{id:'r3i5',name:'Bubble Tea',desc:'Taro milk tea, tapioca pearls',price:20,emoji:'🧋'}]},{id:'r4',name:'Pizzeria X',emoji:'🍕',cat:'Wood-Fired Pizza',time:'20–25 min',color:'#27AE60',menu:[{id:'r4i1',name:'Margherita',desc:'San Marzano tomato, fresh mozzarella, basil',price:52,emoji:'🍕'},{id:'r4i2',name:'Pepperoni Blast',desc:'Double pepperoni, mozzarella, oregano',price:58,emoji:'🍕'},{id:'r4i3',name:'BBQ Chicken Pizza',desc:'Smoked chicken, red onion, BBQ, cilantro',price:60,emoji:'🍕'},{id:'r4i4',name:'Garlic Bread',desc:'Herb butter, mozzarella dip',price:22,emoji:'🥖'},{id:'r4i5',name:'Tiramisu',desc:'Classic Italian dessert',price:28,emoji:'🍰'}]},{id:'r5',name:'Lemonade Co.',emoji:'🍋',cat:'Drinks & Desserts',time:'5–10 min',color:'#F39C12',menu:[{id:'r5i1',name:'Classic Lemonade',desc:'Fresh squeezed, cane sugar',price:16,emoji:'🍋'},{id:'r5i2',name:'Strawberry Slush',desc:'Strawberry, lemon, crushed ice',price:20,emoji:'🍓'},{id:'r5i3',name:'Mango Lassi',desc:'Mango, yogurt, cardamom',price:18,emoji:'🥭'},{id:'r5i4',name:'Churros x4',desc:'Cinnamon sugar, chocolate dip',price:26,emoji:'🥐'},{id:'r5i5',name:'Ice Cream Sandwich',desc:'Cookie + vanilla ice cream',price:24,emoji:'🍨'}]},{id:'r6',name:'Smoke & Grill',emoji:'🥩',cat:'BBQ & Grill',time:'25–35 min',color:'#8B4513',menu:[{id:'r6i1',name:'Half Rack Ribs',desc:'Slow smoked baby back ribs, coleslaw',price:82,emoji:'🍖'},{id:'r6i2',name:'Brisket Plate',desc:'Sliced brisket, pickles, white bread',price:72,emoji:'🥩'},{id:'r6i3',name:'Pulled Pork Slider x3',desc:'Slow cooked pork, pickle, brioche',price:50,emoji:'🫓'},{id:'r6i4',name:'Mac & Cheese',desc:'Creamy smoked mac, breadcrumbs',price:30,emoji:'🧀'},{id:'r6i5',name:'Sweet Tea',desc:'Southern style iced sweet tea',price:12,emoji:'🫖'}]}];
+let db=null,tableId=null,cart={},currentRestaurant=null,currentOrderId=null,orderListener=null,pausedRests={},allPaused=false;
+async function init(){const p=new URLSearchParams(window.location.search);const t=parseInt(p.get('table'));if(!t||t<1||t>50){showScreen('error');document.getElementById('errMsg').textContent='No table found. Please scan the QR code on your table.';return;}tableId=t;try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();await db.ref('.info/connected').once('value');}catch(e){showScreen('error');document.getElementById('errMsg').textContent='Could not connect. Please ask a staff member.';return;}setChips('Table '+tableId);listenToPaused();buildGrid();showScreen('restaurants');}
+function setChips(txt){['chip1','chip2','chip3','chip4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=txt;});}
+function listenToPaused(){db.ref('settings/paused').on('value',snap=>{const d=snap.val()||{};allPaused=d.all===true;pausedRests=d.restaurants||{};const b=document.getElementById('allPausedBanner');if(b)b.classList.toggle('show',allPaused);if(document.getElementById('screen-restaurants').classList.contains('active'))buildGrid();});}
+function buildGrid(){const g=document.getElementById('restGrid');g.innerHTML='';RESTAURANTS.forEach(r=>{const p=allPaused||pausedRests[r.id];const c=document.createElement('div');c.className='rest-card'+(p?' paused':'');c.innerHTML=`<div class="rc-hero" style="background:${r.color}28;">${r.emoji}</div><div class="rc-info"><div class="rc-name">${r.name}</div><div class="rc-cat">${r.cat}</div><div class="rc-time">⏱ ${r.time}</div>${p?'<span class="rc-paused">⏸ Paused</span>':''}</div>`;if(!p)c.onclick=()=>openMenu(r);g.appendChild(c);});}
+function openMenu(r){currentRestaurant=r;document.getElementById('menuEmoji').textContent=r.emoji;document.getElementById('menuName').textContent=r.name;document.getElementById('menuCat').textContent=r.cat+' · '+r.time;renderMenu(r);showScreen('menu');}
+function renderMenu(r){const l=document.getElementById('menuList');l.innerHTML='';r.menu.forEach(item=>{const q=cart[item.id]?.qty||0;const d=document.createElement('div');d.className='menu-item';d.innerHTML=`<span class="mi-emoji">${item.emoji}</span><div class="mi-info"><div class="mi-name">${item.name}</div><div class="mi-desc">${item.desc}</div></div><span class="mi-price">SAR ${item.price}</span><div class="mi-ctrl"><button class="qty-btn" onclick="chQty('${item.id}','${r.id}',-1)">−</button><span class="qty-num" id="qn-${item.id}">${q}</span><button class="qty-btn" onclick="chQty('${item.id}','${r.id}',1)">+</button></div>`;l.appendChild(d);});}
+function chQty(itemId,restId,delta){const r=RESTAURANTS.find(x=>x.id===restId);const item=r.menu.find(i=>i.id===itemId);if(!cart[itemId])cart[itemId]={item,qty:0,restaurant:r};cart[itemId].qty=Math.max(0,cart[itemId].qty+delta);if(cart[itemId].qty===0)delete cart[itemId];const el=document.getElementById('qn-'+itemId);if(el)el.textContent=cart[itemId]?.qty||0;updateFab();}
+function updateFab(){const items=Object.values(cart);const count=items.reduce((s,c)=>s+c.qty,0);const total=items.reduce((s,c)=>s+c.qty*c.item.price,0);const fab=document.getElementById('cartFab');if(count>0)fab.classList.add('visible');else fab.classList.remove('visible');document.getElementById('fabCount').textContent=count;document.getElementById('fabTotal').textContent='SAR '+total;}
+function openCart(){renderCart();document.getElementById('cartSheet').classList.add('open');}
+function closeCart(){document.getElementById('cartSheet').classList.remove('open');}
+function renderCart(){const l=document.getElementById('cartList');l.innerHTML='';let total=0;Object.entries(cart).forEach(([id,c])=>{total+=c.qty*c.item.price;const row=document.createElement('div');row.className='cart-row';row.innerHTML=`<span class="cr-emoji">${c.item.emoji}</span><div class="cr-info"><div class="cr-name">${c.item.name} x${c.qty}</div><div class="cr-rest">${c.restaurant.name}</div></div><button class="cr-rm" onclick="rmCart('${id}')">✕</button><span class="cr-price">SAR ${c.qty*c.item.price}</span>`;l.appendChild(row);});document.getElementById('cartAmt').textContent='SAR '+total;}
+function rmCart(id){delete cart[id];updateFab();renderCart();const el=document.getElementById('qn-'+id);if(el)el.textContent='0';}
+function showConfirm(){if(!Object.keys(cart).length)return;closeCart();const items=Object.values(cart);const total=items.reduce((s,c)=>s+c.qty*c.item.price,0);const notes=document.getElementById('notesInput').value.trim();document.getElementById('confirmTable').textContent='Table '+tableId;const il=document.getElementById('confirmItems');il.innerHTML='';items.forEach(c=>{const row=document.createElement('div');row.className='ci-row';row.innerHTML=`<div class="ci-left">${c.item.emoji} ${c.item.name} x${c.qty}<span class="ci-rest">${c.restaurant.name}</span></div><span style="font-weight:700;font-size:.85rem;">SAR ${c.qty*c.item.price}</span>`;il.appendChild(row);});document.getElementById('confirmTotal').textContent='SAR '+total;const nd=document.getElementById('confirmNotes');if(notes){nd.textContent='📝 '+notes;nd.style.display='block';}else nd.style.display='none';showScreen('confirm');}
+async function placeOrder(){const items=Object.values(cart);if(!items.length)return;const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing…';if(allPaused){showToast('⏸ Ordering is currently paused.','red');btn.disabled=false;btn.textContent='🚀 Place Order';return;}try{const now=new Date();const saDate=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Riyadh'}));const dayKey=saDate.getFullYear()+'-'+String(saDate.getMonth()+1).padStart(2,'0')+'-'+String(saDate.getDate()).padStart(2,'0');const notes=document.getElementById('notesInput').value.trim();const byRest={};items.forEach(c=>{if(!byRest[c.restaurant.id])byRest[c.restaurant.id]={name:c.restaurant.name,emoji:c.restaurant.emoji,items:[]};byRest[c.restaurant.id].items.push({id:c.item.id,name:c.item.name,emoji:c.item.emoji,price:c.item.price,qty:c.qty});});const cRef=db.ref('meta/orderCounter');let orderNum=100;await cRef.transaction(cur=>(cur||99)+1).then(res=>{orderNum=res.snapshot.val();});const orderId='DX-'+orderNum;const orderData={orderId,orderNum,table:tableId,status:'pending',items:items.map(c=>({id:c.item.id,name:c.item.name,emoji:c.item.emoji,price:c.item.price,qty:c.qty,restaurant:c.restaurant.name,restaurantId:c.restaurant.id})),byRest,total:items.reduce((s,c)=>s+c.qty*c.item.price,0),notes:notes||'',placedAt:now.toISOString(),placedTs:firebase.database.ServerValue.TIMESTAMP,dayKey,cancelledAt:null,acceptedAt:null,deliveredAt:null};await db.ref('orders/'+orderId).set(orderData);currentOrderId=orderId;cart={};document.getElementById('notesInput').value='';updateFab();showTracking(orderData);listenOrder(orderId);showToast('🎉 Order '+orderId+' placed!','yellow');}catch(e){console.error(e);showToast('❌ Failed. Try again.','red');}setTimeout(()=>{btn.disabled=false;btn.innerHTML='🚀 Place Order';},4000);}
+function showTracking(order){document.getElementById('trackId').textContent=order.orderId;const placed=new Date(order.placedAt);document.getElementById('trackChips').innerHTML=`<span class="t-chip">🪑 Table ${order.table}</span><span class="t-chip">🕐 ${placed.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><span class="t-chip">💰 SAR ${order.total}</span><span class="t-chip">💵 Cash on Delivery</span>`;renderSummary(order);updateStepper('pending');showScreen('tracking');}
+function renderSummary(order){const sc=document.getElementById('summaryCard');const rows=order.items.map(i=>`<div class="sc-row"><span>${i.emoji} ${i.name} x${i.qty}</span><span>SAR ${i.price*i.qty}</span></div>`).join('');const nh=order.notes?`<div class="sc-notes">📝 ${order.notes}</div>`:'';sc.innerHTML=`<div class="sc-title">Order Details</div>${rows}${nh}<div class="sc-total"><span>Total</span><span>SAR ${order.total}</span></div>`;}
+function updateStepper(status){const states=['pending','preparing','delivered'];const icons=['📋','👨‍🍳','✅'];const labels=['Pending','Preparing','Delivered'];const idx=states.indexOf(status);states.forEach((s,i)=>{document.getElementById('dot'+i).className='step-dot'+(i<idx?' done':i===idx?' active':'');document.getElementById('dot'+i).textContent=icons[i];document.getElementById('lbl'+i).className='step-lbl'+(i<idx?' done':i===idx?' active':'');document.getElementById('lbl'+i).textContent=labels[i];if(i<2)document.getElementById('line'+i).className='step-line'+(i<idx?' done':'');});const msgs={pending:'📋 Order placed! Waiting to be accepted…',preparing:'👨‍🍳 Your food is being prepared!',delivered:'✅ Delivered! Enjoy your meal 🎉',cancelled:'❌ This order was cancelled. Please speak to a staff member.'};const msg=document.getElementById('statusMsg');msg.textContent=msgs[status]||'';msg.className='status-msg'+(status==='preparing'?' preparing':status==='delivered'?' delivered':status==='cancelled'?' cancelled':'');}
+function listenOrder(orderId){if(orderListener)orderListener();const ref=db.ref('orders/'+orderId+'/status');const fn=ref.on('value',snap=>{const s=snap.val();if(!s)return;updateStepper(s);const map={preparing:['👨‍🍳 Being prepared!','blue'],delivered:['✅ Delivered! Enjoy!','green'],cancelled:['❌ Order cancelled','red']};if(map[s])showToast(...map[s]);});orderListener=()=>ref.off('value',fn);}
+function startNewOrder(){if(orderListener){orderListener();orderListener=null;}currentOrderId=null;cart={};updateFab();buildGrid();showScreen('restaurants');}
+async function callWaiter(){const btn=document.getElementById('callWaiterBtn');btn.disabled=true;try{await db.ref('waiterCalls').push({table:tableId,message:'Table '+tableId+' needs assistance',ts:firebase.database.ServerValue.TIMESTAMP,dismissed:false});btn.classList.add('sent');btn.textContent='✅ Waiter Notified';showToast('🛎️ Waiter called!','green');setTimeout(()=>{btn.classList.remove('sent');btn.textContent='🛎️ Call Waiter';btn.disabled=false;},20000);}catch(e){showToast('Failed to call waiter','red');btn.disabled=false;}}
+function showScreen(name){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+name).classList.add('active');}
+function showToast(msg,type='yellow'){const wrap=document.getElementById('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;wrap.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3500);}
+init();
+</script>
+</body>
+</html>
