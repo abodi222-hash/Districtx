@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DISTRICT X — QR Code Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#1B2A4A;color:#fff;padding:1.5rem;}
+h1{font-size:1.4rem;color:#F5C518;margin-bottom:.25rem;}
+p{font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:1.25rem;}
+.controls{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);padding:1rem;margin-bottom:1.5rem;display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;}
+.ctrl-group{display:flex;flex-direction:column;gap:.3rem;}
+.ctrl-group label{font-size:.72rem;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;}
+.ctrl-group input{background:#fff;border:1px solid #ccc;color:#111;padding:.35rem .6rem;font-size:.85rem;width:280px;}
+.btn{background:#F5C518;color:#1B2A4A;border:none;padding:.45rem 1.1rem;font-size:.82rem;font-weight:700;cursor:pointer;}
+.btn:hover{background:#e6b800;}
+.btn.secondary{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);}
+.btn.secondary:hover{background:rgba(255,255,255,.18);}
+.url-preview{font-size:.75rem;color:rgba(255,255,255,.35);margin-top:.25rem;word-break:break-all;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;}
+
+.qr-item{
+background:#fff;color:#1B2A4A;
+padding:.75rem;text-align:center;
+page-break-inside:avoid;break-inside:avoid;
+}
+.qr-label{font-size:1rem;font-weight:900;margin-bottom:.5rem;letter-spacing:.05em;}
+.qr-code{display:flex;justify-content:center;margin-bottom:.5rem;}
+.qr-code img,.qr-code canvas{width:140px!important;height:140px!important;}
+.qr-sub{font-size:.62rem;color:#888;word-break:break-all;}
+
+@media print{
+body{background:#fff!important;color:#111!important;padding:0;}
+h1,p,.controls,.topbar-note{display:none!important;}
+.grid{grid-template-columns:repeat(4,1fr);gap:.5rem;padding:0;}
+.qr-item{border:1px solid #ddd;padding:.5rem;}
+@page{margin:.75cm;}
+}
+</style>
+
+</head>
+<body>
+
+<h1>DISTRICT X — QR Code Generator</h1>
+<p>Enter your deployed customer URL, then generate and print QR codes for all 50 tables.</p>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Customer Page URL (without ?table=)</label>
+    <input type="text" id="baseUrl" placeholder="https://your-site.com/customer.html" value="https://your-site.com/customer.html"/>
+    <div class="url-preview" id="urlPreview">Preview: https://your-site.com/customer.html?table=1</div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <button class="btn" onclick="generateAll()">⚡ Generate All 50</button>
+    <button class="btn secondary" onclick="window.print()">🖨️ Print</button>
+  </div>
+</div>
+
+<div class="grid" id="qrGrid"></div>
+
+<script>
+document.getElementById('baseUrl').addEventListener('input', function() {
+  document.getElementById('urlPreview').textContent = 'Preview: ' + this.value.trim() + '?table=1';
+});
+
+function generateAll() {
+  const base = document.getElementById('baseUrl').value.trim();
+  if(!base) { alert('Please enter the customer URL first.'); return; }
+  const grid = document.getElementById('qrGrid');
+  grid.innerHTML = '';
+
+  for(let t = 1; t <= 50; t++) {
+    const url = base + '?table=' + t;
+
+    const item = document.createElement('div');
+    item.className = 'qr-item';
+
+    const label = document.createElement('div');
+    label.className = 'qr-label';
+    label.textContent = 'TABLE ' + t;
+
+    const qrWrap = document.createElement('div');
+    qrWrap.className = 'qr-code';
+    const qrEl = document.createElement('div');
+    qrWrap.appendChild(qrEl);
+
+    const sub = document.createElement('div');
+    sub.className = 'qr-sub';
+    sub.textContent = url;
+
+    item.appendChild(label);
+    item.appendChild(qrWrap);
+    item.appendChild(sub);
+    grid.appendChild(item);
+
+    new QRCode(qrEl, {
+      text: url,
+      width: 140,
+      height: 140,
+      colorDark: '#1B2A4A',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+}
+
+// Auto-generate on load if URL already set
+window.addEventListener('load', () => {
+  const url = document.getElementById('baseUrl').value;
+  if(url && url !== 'https://your-site.com/customer.html') generateAll();
+});
+</script>
+
+</body>
+</html>
