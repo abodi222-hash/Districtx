@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>DISTRICT X — Order</title>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+:root{
+  --navy:#1B2A4A;--blue:#5B8DD9;--lblue:#A8C8F0;
+  --red:#E8412A;--yellow:#F5C518;--cream:#F2E8D5;
+  --paper:#EDE0C8;--green:#27AE60;--orange:#F39C12;--white:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:var(--navy);font-family:'Nunito',sans-serif;color:var(--navy);overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:block;}
+
+/* HEADER */
+.dx-header{background:var(–navy);padding:.7rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(–yellow);position:sticky;top:0;z-index:100;}
+.dx-logo{font-family:‘Boogaloo’,cursive;font-size:1.45rem;color:var(–cream);}
+.dx-logo span{color:var(–yellow);}
+.table-chip{background:var(–yellow);color:var(–navy);font-family:‘Fredoka One’,cursive;font-size:.82rem;padding:.22rem .7rem;border:2px solid var(–navy);}
+
+/* LOADING */
+#screen-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(–navy);min-height:100vh;}
+.splash-district{font-family:‘Boogaloo’,cursive;font-size:4rem;color:var(–cream);line-height:1;display:block;text-align:center;}
+.splash-x{display:inline-flex;align-items:center;justify-content:center;width:78px;height:78px;background:var(–yellow);transform:rotate(-6deg);margin:.5rem auto;border:3px solid var(–navy);box-shadow:4px 4px 0 rgba(0,0,0,.3);}
+.splash-x span{font-family:‘Boogaloo’,cursive;font-size:3rem;color:var(–red);}
+.splash-sub{font-family:‘Fredoka One’,cursive;font-size:1rem;color:var(–lblue);letter-spacing:.15em;text-transform:uppercase;margin-top:.25rem;text-align:center;}
+.loading-dots{display:flex;gap:.4rem;margin-top:1.5rem;}
+.loading-dots span{width:10px;height:10px;border-radius:50%;background:var(–yellow);animation:dotBounce 1.2s infinite;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes dotBounce{0%,80%,100%{transform:scale(.8);opacity:.4}40%{transform:scale(1.2);opacity:1}}
+
+/* PAUSED BANNER */
+.paused-banner{background:var(–red);color:#fff;text-align:center;padding:.6rem;font-family:‘Fredoka One’,cursive;font-size:.9rem;display:none;}
+.paused-banner.show{display:block;}
+
+/* ERROR */
+#screen-error{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;background:var(–navy);}
+.err-icon{font-size:3rem;margin-bottom:1rem;}
+.err-title{font-family:‘Boogaloo’,cursive;font-size:2rem;color:var(–red);}
+.err-msg{color:var(–lblue);font-weight:700;margin-top:.5rem;font-size:.9rem;max-width:300px;line-height:1.6;}
+
+/* RESTAURANTS */
+#screen-restaurants{background:var(–navy);padding-bottom:5rem;}
+.section-head{font-family:‘Boogaloo’,cursive;font-size:1.45rem;color:var(–cream);padding:.9rem 1rem .25rem;display:flex;align-items:center;gap:.5rem;}
+.rest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.8rem;padding:.5rem 1rem 1rem;}
+.rest-card{background:var(–cream);border:3px solid var(–navy);box-shadow:5px 5px 0 var(–navy);cursor:pointer;overflow:hidden;transition:transform .18s,box-shadow .18s;animation:cardIn .3s ease both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.rest-card:hover{transform:translateY(-4px);box-shadow:8px 8px 0 var(–navy);}
+.rest-card:active{transform:translateY(0);box-shadow:3px 3px 0 var(–navy);}
+.rest-card.paused{opacity:.5;pointer-events:none;}
+.rest-hero{height:86px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;}
+.rest-info{padding:.6rem .7rem .75rem;}
+.rest-name{font-family:‘Boogaloo’,cursive;font-size:1rem;color:var(–navy);line-height:1.1;}
+.rest-cat{font-size:.7rem;font-weight:700;color:#666;margin-top:.12rem;}
+.rest-time{font-size:.68rem;color:var(–red);font-weight:800;margin-top:.2rem;}
+.rest-paused-tag{font-size:.65rem;background:var(–red);color:#fff;font-weight:800;padding:.1rem .4rem;display:inline-block;margin-top:.2rem;}
+
+/* call waiter */
+.call-waiter-btn{
+display:flex;align-items:center;gap:.5rem;justify-content:center;
+margin:.75rem 1rem .25rem;
+background:transparent;border:2px solid rgba(255,255,255,.2);color:var(–lblue);
+font-family:‘Fredoka One’,cursive;font-size:.9rem;padding:.55rem;cursor:pointer;
+transition:background .15s,border-color .15s;width:calc(100% - 2rem);
+}
+.call-waiter-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.35);}
+.call-waiter-btn:active{background:rgba(255,255,255,.15);}
+.call-waiter-btn.sent{color:var(–green);border-color:var(–green);}
+
+/* MENU */
+#screen-menu{background:var(–navy);padding-bottom:6rem;}
+.menu-hero{padding:1rem;display:flex;align-items:center;gap:.9rem;border-bottom:2px dashed rgba(255,255,255,.12);}
+.mh-emoji{font-size:2.4rem;flex-shrink:0;}
+.mh-name{font-family:‘Boogaloo’,cursive;font-size:1.5rem;color:var(–cream);line-height:1.1;}
+.mh-cat{font-size:.75rem;font-weight:700;color:var(–lblue);margin-top:.12rem;}
+.back-pill{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.2);color:var(–cream);font-family:‘Nunito’,sans-serif;font-weight:700;font-size:.78rem;padding:.3rem .7rem;cursor:pointer;transition:background .15s;margin-left:auto;flex-shrink:0;}
+.back-pill:hover{background:rgba(255,255,255,.15);}
+.menu-item{background:var(–cream);margin:.45rem 1rem;border:2px solid var(–navy);box-shadow:3px 3px 0 var(–navy);display:flex;align-items:center;gap:.7rem;padding:.8rem;}
+.mi-emoji{font-size:1.65rem;flex-shrink:0;width:34px;text-align:center;}
+.mi-info{flex:1;min-width:0;}
+.mi-name{font-family:‘Fredoka One’,cursive;font-size:.92rem;color:var(–navy);}
+.mi-desc{font-size:.7rem;color:#666;margin-top:.1rem;line-height:1.4;}
+.mi-price{font-family:‘Boogaloo’,cursive;font-size:1.2rem;color:var(–red);flex-shrink:0;}
+.mi-ctrl{display:flex;align-items:center;gap:.3rem;flex-shrink:0;}
+.qty-btn{width:29px;height:29px;background:var(–navy);color:#fff;border:none;cursor:pointer;font-size:1.05rem;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:‘Boogaloo’,cursive;}
+.qty-btn:hover{background:#2d4a7a;}
+.qty-num{font-family:‘Boogaloo’,cursive;font-size:1.1rem;color:var(–navy);min-width:20px;text-align:center;}
+
+/* CART FAB */
+.cart-fab{position:fixed;bottom:1.1rem;left:50%;transform:translateX(-50%);background:var(–yellow);color:var(–navy);font-family:‘Fredoka One’,cursive;font-size:.95rem;padding:.7rem 1.75rem;border:3px solid var(–navy);box-shadow:5px 5px 0 var(–navy);cursor:pointer;display:none;align-items:center;gap:.5rem;z-index:90;white-space:nowrap;transition:transform .15s,box-shadow .15s;animation:fabIn .3s ease;}
+@keyframes fabIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.cart-fab.visible{display:flex;}
+.cart-fab:hover{transform:translateX(-50%) translateY(-2px);box-shadow:7px 7px 0 var(–navy);}
+.cf-count{background:var(–red);color:#fff;font-size:.72rem;padding:.08rem .4rem;border:2px solid var(–navy);font-family:‘Nunito’,sans-serif;font-weight:900;}
+
+/* CART SHEET */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:flex-end;}
+.sheet-overlay.open{display:flex;}
+.sheet{background:var(–cream);width:100%;max-height:90vh;border-top:4px solid var(–navy);overflow-y:auto;animation:sheetUp .27s ease;}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-head{background:var(–navy);padding:.85rem 1.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.sheet-title{font-family:‘Boogaloo’,cursive;font-size:1.35rem;color:var(–yellow);}
+.sheet-close{background:none;border:2px solid rgba(255,255,255,.3);color:#fff;width:30px;height:30px;cursor:pointer;font-size:.95rem;font-family:‘Boogaloo’,cursive;}
+.cart-row{display:flex;align-items:center;gap:.65rem;padding:.65rem 1.1rem;border-bottom:1px dashed #ccc;}
+.cr-emoji{font-size:1.2rem;flex-shrink:0;}
+.cr-info{flex:1;}
+.cr-name{font-weight:700;font-size:.85rem;color:var(–navy);}
+.cr-rest{font-size:.68rem;color:#888;}
+.cr-remove{background:none;border:none;color:#bbb;cursor:pointer;font-size:.95rem;padding:.2rem;flex-shrink:0;}
+.cr-remove:hover{color:var(–red);}
+.cr-price{font-family:‘Boogaloo’,cursive;font-size:1.05rem;color:var(–red);flex-shrink:0;}
+
+/* notes field */
+.notes-section{padding:.85rem 1.1rem;border-bottom:2px dashed #ccc;}
+.notes-label{font-family:‘Fredoka One’,cursive;font-size:.9rem;color:var(–navy);margin-bottom:.4rem;display:block;}
+.notes-input{width:100%;border:2px solid var(–navy);background:#fff;padding:.5rem .65rem;font-family:‘Nunito’,sans-serif;font-size:.85rem;color:var(–navy);resize:none;outline:none;}
+.notes-input:focus{border-color:var(–blue);}
+
+.cart-footer{padding:.9rem 1.1rem;background:#e4d8c0;position:sticky;bottom:0;}
+.cf-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem;}
+.cf-total-lbl{font-family:‘Fredoka One’,cursive;font-size:1rem;color:var(–navy);}
+.cf-total-amt{font-family:‘Boogaloo’,cursive;font-size:1.9rem;color:var(–red);}
+.cash-note{background:var(–navy);color:var(–cream);font-size:.75rem;font-weight:700;padding:.45rem .7rem;margin-bottom:.65rem;display:flex;align-items:center;gap:.4rem;}
+.review-btn{width:100%;background:var(–yellow);color:var(–navy);font-family:‘Fredoka One’,cursive;font-size:1.05rem;padding:.8rem;border:3px solid var(–navy);box-shadow:4px 4px 0 var(–navy);cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.review-btn:hover{transform:translateY(-2px);box-shadow:6px 6px 0 var(–navy);}
+
+/* CONFIRMATION SCREEN */
+#screen-confirm{background:var(–navy);padding-bottom:3rem;}
+.confirm-wrap{padding:1rem;}
+.confirm-card{background:var(–cream);border:3px solid var(–navy);box-shadow:6px 6px 0 var(–navy);overflow:hidden;}
+.confirm-header{background:var(–yellow);padding:.85rem 1.1rem;border-bottom:3px solid var(–navy);}
+.confirm-header h2{font-family:‘Boogaloo’,cursive;font-size:1.5rem;color:var(–navy);}
+.confirm-header p{font-size:.78rem;color:#555;font-weight:700;margin-top:.1rem;}
+.confirm-section{padding:.75rem 1.1rem;border-bottom:1px dashed #ccc;}
+.cs-label{font-family:‘Fredoka One’,cursive;font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;}
+.confirm-item-row{display:flex;justify-content:space-between;align-items:center;padding:.25rem 0;font-size:.85rem;color:var(–navy);}
+.confirm-item-row .cir-left{display:flex;align-items:center;gap:.4rem;font-weight:700;}
+.confirm-item-row .cir-rest{font-size:.68rem;color:#888;display:block;}
+.confirm-total-row{display:flex;justify-content:space-between;align-items:center;padding:.7rem 1.1rem;background:#e4d8c0;}
+.ctr-lbl{font-family:‘Fredoka One’,cursive;font-size:1.1rem;color:var(–navy);}
+.ctr-amt{font-family:‘Boogaloo’,cursive;font-size:2rem;color:var(–red);}
+.confirm-notes-display{font-size:.82rem;color:#555;font-style:italic;padding:.6rem 1.1rem;background:#f8f0e4;border-bottom:1px dashed #ccc;}
+.confirm-actions{display:flex;gap:.75rem;padding:.9rem 1.1rem;}
+.btn-back{flex:1;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);color:var(–cream);font-family:‘Fredoka One’,cursive;font-size:.95rem;padding:.7rem;cursor:pointer;}
+.btn-place{flex:2;background:var(–red);color:#fff;font-family:‘Fredoka One’,cursive;font-size:1rem;padding:.7rem;border:3px solid var(–navy);box-shadow:4px 4px 0 var(–navy);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.btn-place:hover{transform:translateY(-2px);box-shadow:6px 6px 0 var(–navy);}
+.btn-place:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:2px 2px 0 var(–navy);}
+
+/* TRACKING */
+#screen-tracking{background:var(–navy);padding-bottom:3rem;}
+.track-wrap{padding:1.1rem;}
+.track-id{font-family:‘Boogaloo’,cursive;font-size:2.6rem;color:var(–yellow);text-align:center;letter-spacing:.04em;}
+.track-sub{text-align:center;color:rgba(255,255,255,.4);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.9rem;}
+.track-meta{display:flex;flex-wrap:wrap;gap:.4rem;justify-content:center;margin-bottom:1.1rem;}
+.meta-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:var(–lblue);font-size:.75rem;font-weight:700;padding:.22rem .65rem;}
+
+/* stepper */
+.stepper{display:flex;align-items:center;justify-content:center;gap:0;margin:1.1rem 0;}
+.step{display:flex;flex-direction:column;align-items:center;gap:.35rem;flex:1;max-width:88px;}
+.step-dot{width:44px;height:44px;border-radius:50%;border:3px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:1.25rem;transition:all .4s ease;}
+.step-dot.done{background:var(–green);border-color:var(–green);box-shadow:0 0 0 4px rgba(39,174,96,.18);}
+.step-dot.active{background:var(–yellow);border-color:var(–yellow);box-shadow:0 0 0 4px rgba(245,197,24,.22);animation:stepPulse 1.8s infinite;}
+@keyframes stepPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.step-lbl{font-size:.66rem;font-weight:800;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.step-lbl.active{color:var(–yellow);}
+.step-lbl.done{color:var(–green);}
+.step-line{flex:1;height:3px;background:rgba(255,255,255,.1);transition:background .4s;max-width:36px;}
+.step-line.done{background:var(–green);}
+
+.status-banner{background:rgba(255,255,255,.05);border-left:4px solid var(–yellow);padding:.7rem .9rem;margin:0 0 1.1rem;font-family:‘Fredoka One’,cursive;font-size:.9rem;color:var(–cream);transition:border-color .4s;}
+.status-banner.preparing{border-color:var(–orange);}
+.status-banner.delivered{border-color:var(–green);}
+.status-banner.cancelled{border-color:var(–red);color:var(–red);}
+
+.summary-card{background:var(–cream);border:3px solid var(–navy);box-shadow:5px 5px 0 var(–navy);padding:.9rem;}
+.sc-title{font-family:‘Boogaloo’,cursive;font-size:1.05rem;color:var(–navy);margin-bottom:.5rem;border-bottom:1px dashed #ccc;padding-bottom:.35rem;}
+.sc-row{display:flex;justify-content:space-between;font-size:.82rem;padding:.22rem 0;border-bottom:1px dashed #e8dcc8;color:var(–navy);}
+.sc-total{display:flex;justify-content:space-between;padding-top:.45rem;margin-top:.2rem;}
+.sc-total span:first-child{font-family:‘Fredoka One’,cursive;font-size:.95rem;color:var(–navy);}
+.sc-total span:last-child{font-family:‘Boogaloo’,cursive;font-size:1.35rem;color:var(–red);}
+.sc-notes{font-size:.75rem;color:#777;font-style:italic;padding:.5rem .1rem;border-top:1px dashed #ccc;margin-top:.3rem;}
+
+.new-order-btn{display:block;width:100%;margin-top:.9rem;background:var(–yellow);color:var(–navy);font-family:‘Fredoka One’,cursive;font-size:1rem;padding:.7rem;border:3px solid var(–navy);box-shadow:4px 4px 0 var(–navy);cursor:pointer;text-align:center;transition:transform .15s,box-shadow .15s;}
+.new-order-btn:hover{transform:translateY(-2px);box-shadow:6px 6px 0 var(–navy);}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:68px;right:.75rem;z-index:500;display:flex;flex-direction:column;gap:.35rem;pointer-events:none;}
+.toast{background:var(–navy);border:2px solid var(–yellow);color:var(–cream);font-family:‘Fredoka One’,cursive;font-size:.82rem;padding:.55rem .85rem;box-shadow:3px 3px 0 var(–yellow);max-width:255px;animation:toastIn .22s ease;display:flex;align-items:center;gap:.35rem;}
+.toast.green{border-color:var(–green);box-shadow:3px 3px 0 var(–green);}
+.toast.red{border-color:var(–red);box-shadow:3px 3px 0 var(–red);}
+.toast.blue{border-color:var(–blue);box-shadow:3px 3px 0 var(–blue);}
+@keyframes toastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.1);}
+::-webkit-scrollbar-thumb{background:var(–yellow);border-radius:2px;}
+</style>
+
+</head>
+<body>
+
+<!-- Loading -->
+
+<div id="screen-loading" class="screen active">
+  <div class="splash-district">District</div>
+  <div style="display:flex;justify-content:center;"><div class="splash-x"><span>X</span></div></div>
+  <div class="splash-sub">Food &amp; Beverages</div>
+  <div class="loading-dots"><span></span><span></span><span></span></div>
+</div>
+
+<!-- Error -->
+
+<div id="screen-error" class="screen">
+  <div class="err-icon">⚠️</div>
+  <div class="err-title">Invalid QR Code</div>
+  <div class="err-msg" id="errMsg">Please scan the QR code on your table.</div>
+</div>
+
+<!-- Restaurants -->
+
+<div id="screen-restaurants" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <span>X</span></div>
+    <div class="table-chip" id="chip1">Table –</div>
+  </div>
+  <div class="paused-banner" id="allPausedBanner">⏸ Ordering is temporarily paused. Please wait…</div>
+  <button class="call-waiter-btn" id="callWaiterBtn" onclick="callWaiter()">🛎️ Call Waiter</button>
+  <div class="section-head">🍽️ Restaurants</div>
+  <div class="rest-grid" id="restGrid"></div>
+</div>
+
+<!-- Menu -->
+
+<div id="screen-menu" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <span>X</span></div>
+    <div class="table-chip" id="chip2">Table –</div>
+  </div>
+  <div class="menu-hero" id="menuHero">
+    <span class="mh-emoji" id="menuEmoji">🍔</span>
+    <div><div class="mh-name" id="menuName">–</div><div class="mh-cat" id="menuCat">–</div></div>
+    <button class="back-pill" onclick="showScreen('restaurants')">← Back</button>
+  </div>
+  <div id="menuList"></div>
+</div>
+
+<!-- Cart Sheet -->
+
+<div class="sheet-overlay" id="cartSheet">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">🛒 Your Cart</div><button class="sheet-close" onclick="closeCart()">✕</button></div>
+    <div id="cartList"></div>
+    <div class="notes-section">
+      <label class="notes-label">📝 Order Notes (optional)</label>
+      <textarea class="notes-input" id="notesInput" rows="2" placeholder="e.g. No onions, extra sauce, allergies…"></textarea>
+    </div>
+    <div class="cart-footer">
+      <div class="cf-total"><span class="cf-total-lbl">Total</span><span class="cf-total-amt" id="cartTotalAmt">SAR 0.00</span></div>
+      <div class="cash-note">💵 Payment by cash / POS when delivered</div>
+      <button class="review-btn" onclick="showConfirmScreen()">📋 Review &amp; Confirm Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cart FAB -->
+
+<div class="cart-fab" id="cartFab" onclick="openCart()">
+  🛒 View Cart <span class="cf-count" id="fabCount">0</span>
+  <span style="font-family:'Boogaloo',cursive;color:var(--red);" id="fabTotal">SAR 0</span>
+</div>
+
+<!-- Confirmation Screen -->
+
+<div id="screen-confirm" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <span>X</span></div>
+    <div class="table-chip" id="chip3">Table –</div>
+  </div>
+  <div class="confirm-wrap">
+    <div class="confirm-card">
+      <div class="confirm-header">
+        <h2>📋 Confirm Your Order</h2>
+        <p>Review everything before placing</p>
+      </div>
+      <div class="confirm-section">
+        <div class="cs-label">Table</div>
+        <div style="font-family:'Boogaloo',cursive;font-size:1.2rem;color:var(--navy);" id="confirmTableDisplay">–</div>
+      </div>
+      <div class="confirm-section">
+        <div class="cs-label">Items</div>
+        <div id="confirmItemList"></div>
+      </div>
+      <div id="confirmNotesDisplay" class="confirm-notes-display" style="display:none;"></div>
+      <div class="confirm-total-row">
+        <span class="ctr-lbl">Total</span>
+        <span class="ctr-amt" id="confirmTotal">SAR 0.00</span>
+      </div>
+      <div class="confirm-actions">
+        <button class="btn-back" onclick="showScreen('restaurants');openCart()">← Edit</button>
+        <button class="btn-place" id="placeBtn" onclick="placeOrder()">🚀 Place Order</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tracking -->
+
+<div id="screen-tracking" class="screen">
+  <div class="dx-header">
+    <div class="dx-logo">District <span>X</span></div>
+    <div class="table-chip" id="chip4">Table –</div>
+  </div>
+  <div class="track-wrap">
+    <div class="track-id" id="trackId">DX-000</div>
+    <div class="track-sub">Order ID · Show this to staff</div>
+    <div class="track-meta" id="trackMeta"></div>
+    <div class="stepper">
+      <div class="step"><div class="step-dot active" id="dot0">📋</div><div class="step-lbl active" id="lbl0">Pending</div></div>
+      <div class="step-line" id="line0"></div>
+      <div class="step"><div class="step-dot" id="dot1">👨‍🍳</div><div class="step-lbl" id="lbl1">Preparing</div></div>
+      <div class="step-line" id="line1"></div>
+      <div class="step"><div class="step-dot" id="dot2">✅</div><div class="step-lbl" id="lbl2">Delivered</div></div>
+    </div>
+    <div class="status-banner" id="statusBanner">📋 Order placed! Waiting to be accepted…</div>
+    <div class="summary-card" id="summaryCard"></div>
+    <button class="new-order-btn" onclick="startNewOrder()">🛒 Place Another Order</button>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ─── FIREBASE CONFIG ─────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAdQKAD2ORPRnlxtIU01ErQtUl8DNg2brc",
+  authDomain: "district-x-test.firebaseapp.com",
+  databaseURL: "https://district-x-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "district-x-test",
+  storageBucket: "district-x-test.firebasestorage.app",
+  messagingSenderId: "532943192712",
+  appId: "1:532943192712:web:90e487d935c93d5eef953d"
+};
+
+// ─── RESTAURANTS ─────────────────────────────
+const RESTAURANTS = [
+  {id:'r1',name:'Burger District',emoji:'🍔',cat:'American Grill',time:'15–20 min',color:'#E8412A',
+   menu:[
+    {id:'r1i1',name:'Classic Smash Burger',desc:'Double patty, cheddar, pickles, secret sauce',price:45,emoji:'🍔'},
+    {id:'r1i2',name:'BBQ Bacon Burger',desc:'Crispy bacon, smoked BBQ, caramelised onion',price:52,emoji:'🥓'},
+    {id:'r1i3',name:'Crispy Chicken Sando',desc:'Buttermilk fried chicken, slaw, jalapeño mayo',price:48,emoji:'🍗'},
+    {id:'r1i4',name:'Loaded Fries',desc:'Cheese sauce, jalapeños, sour cream',price:25,emoji:'🍟'},
+    {id:'r1i5',name:'Onion Rings',desc:'Beer battered, chipotle dip',price:22,emoji:'🧅'},
+  ]},
+  {id:'r2',name:'Taco Stand',emoji:'🌮',cat:'Mexican Street Food',time:'10–15 min',color:'#D4A017',
+   menu:[
+    {id:'r2i1',name:'Street Tacos ×3',desc:'Carne asada, cilantro, onion, lime',price:40,emoji:'🌮'},
+    {id:'r2i2',name:'Chicken Quesadilla',desc:'Melted cheese, grilled chicken, pico de gallo',price:38,emoji:'🫓'},
+    {id:'r2i3',name:'Nachos Grande',desc:'Tortilla chips, beans, salsa, jalapeños, guac',price:44,emoji:'🧀'},
+    {id:'r2i4',name:'Elote (Corn)',desc:'Street corn, mayo, cotija, chili',price:20,emoji:'🌽'},
+    {id:'r2i5',name:'Horchata',desc:'Chilled rice milk, cinnamon',price:15,emoji:'🥛'},
+  ]},
+  {id:'r3',name:'Noodle House',emoji:'🍜',cat:'Asian Fusion',time:'15–25 min',color:'#5B8DD9',
+   menu:[
+    {id:'r3i1',name:'Tonkotsu Ramen',desc:'Rich pork broth, chashu, soft egg, nori',price:55,emoji:'🍜'},
+    {id:'r3i2',name:'Pad Thai',desc:'Rice noodles, shrimp, tamarind, peanuts',price:48,emoji:'🍝'},
+    {id:'r3i3',name:'Gyoza (6 pcs)',desc:'Pan-fried pork dumplings, ponzu sauce',price:32,emoji:'🥟'},
+    {id:'r3i4',name:'Chicken Katsu',desc:'Breaded chicken, tonkatsu sauce, rice',price:50,emoji:'🍱'},
+    {id:'r3i5',name:'Bubble Tea',desc:'Taro milk tea, tapioca pearls',price:20,emoji:'🧋'},
+  ]},
+  {id:'r4',name:'Pizzeria X',emoji:'🍕',cat:'Wood-Fired Pizza',time:'20–25 min',color:'#27AE60',
+   menu:[
+    {id:'r4i1',name:'Margherita',desc:'San Marzano tomato, fresh mozzarella, basil',price:52,emoji:'🍕'},
+    {id:'r4i2',name:'Pepperoni Blast',desc:'Double pepperoni, mozzarella, oregano',price:58,emoji:'🍕'},
+    {id:'r4i3',name:'BBQ Chicken Pizza',desc:'Smoked chicken, red onion, BBQ, cilantro',price:60,emoji:'🍕'},
+    {id:'r4i4',name:'Garlic Bread',desc:'Herb butter, mozzarella dip',price:22,emoji:'🥖'},
+    {id:'r4i5',name:'Tiramisu',desc:'Classic Italian dessert',price:28,emoji:'🍰'},
+  ]},
+  {id:'r5',name:'Lemonade Co.',emoji:'🍋',cat:'Drinks & Desserts',time:'5–10 min',color:'#F39C12',
+   menu:[
+    {id:'r5i1',name:'Classic Lemonade',desc:'Fresh squeezed, cane sugar',price:16,emoji:'🍋'},
+    {id:'r5i2',name:'Strawberry Slush',desc:'Strawberry, lemon, crushed ice',price:20,emoji:'🍓'},
+    {id:'r5i3',name:'Mango Lassi',desc:'Mango, yogurt, cardamom',price:18,emoji:'🥭'},
+    {id:'r5i4',name:'Churros ×4',desc:'Cinnamon sugar, chocolate dip',price:26,emoji:'🥐'},
+    {id:'r5i5',name:'Ice Cream Sandwich',desc:'Cookie + vanilla ice cream',price:24,emoji:'🍨'},
+  ]},
+  {id:'r6',name:'Smoke & Grill',emoji:'🥩',cat:'BBQ & Grill',time:'25–35 min',color:'#8B4513',
+   menu:[
+    {id:'r6i1',name:'Half Rack Ribs',desc:'Slow smoked baby back ribs, coleslaw',price:82,emoji:'🍖'},
+    {id:'r6i2',name:'Brisket Plate',desc:'Sliced brisket, pickles, white bread',price:72,emoji:'🥩'},
+    {id:'r6i3',name:'Pulled Pork Slider ×3',desc:'Slow cooked pork, pickle, brioche',price:50,emoji:'🫓'},
+    {id:'r6i4',name:'Mac & Cheese',desc:'Creamy smoked mac, breadcrumbs',price:30,emoji:'🧀'},
+    {id:'r6i5',name:'Sweet Tea',desc:'Southern style iced sweet tea',price:12,emoji:'🫖'},
+  ]},
+];
+
+// ─── STATE ───────────────────────────────────
+let db = null, tableId = null;
+let cart = {}, currentRestaurant = null;
+let currentOrderId = null, orderListener = null;
+let pausedRestaurants = {}, allPaused = false;
+
+// ─── INIT ────────────────────────────────────
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const t = parseInt(params.get('table'));
+  if (!t || t < 1 || t > 50) {
+    showScreen('error');
+    document.getElementById('errMsg').textContent = 'No table found. Please scan the QR code on your table.';
+    return;
+  }
+  tableId = t;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    await db.ref('.info/connected').once('value');
+  } catch(e) {
+    showScreen('error');
+    document.getElementById('errMsg').textContent = 'Could not connect. Please ask a staff member.';
+    return;
+  }
+  setChips('Table ' + tableId);
+  buildRestaurantGrid();
+  listenToPaused();
+  showScreen('restaurants');
+}
+
+function setChips(txt) {
+  ['chip1','chip2','chip3','chip4'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = txt;
+  });
+}
+
+// ─── PAUSED LISTENER ─────────────────────────
+function listenToPaused() {
+  db.ref('settings/paused').on('value', snap => {
+    const data = snap.val() || {};
+    allPaused = data.all === true;
+    pausedRestaurants = data.restaurants || {};
+    const banner = document.getElementById('allPausedBanner');
+    if(banner) banner.classList.toggle('show', allPaused);
+    if(document.getElementById('screen-restaurants').classList.contains('active')) buildRestaurantGrid();
+  });
+}
+
+// ─── RESTAURANTS ─────────────────────────────
+function buildRestaurantGrid() {
+  const grid = document.getElementById('restGrid');
+  grid.innerHTML = '';
+  RESTAURANTS.forEach(r => {
+    const isPaused = allPaused || pausedRestaurants[r.id];
+    const card = document.createElement('div');
+    card.className = 'rest-card' + (isPaused ? ' paused' : '');
+    card.innerHTML = `
+      <div class="rest-hero" style="background:${r.color}22;">${r.emoji}</div>
+      <div class="rest-info">
+        <div class="rest-name">${r.name}</div>
+        <div class="rest-cat">${r.cat}</div>
+        <div class="rest-time">⏱ ${r.time}</div>
+        ${isPaused ? '<span class="rest-paused-tag">⏸ Paused</span>' : ''}
+      </div>`;
+    if(!isPaused) card.onclick = () => openMenu(r);
+    grid.appendChild(card);
+  });
+}
+
+// ─── MENU ────────────────────────────────────
+function openMenu(r) {
+  currentRestaurant = r;
+  document.getElementById('menuEmoji').textContent = r.emoji;
+  document.getElementById('menuName').textContent = r.name;
+  document.getElementById('menuCat').textContent = r.cat + ' · ' + r.time;
+  renderMenuItems(r);
+  showScreen('menu');
+}
+
+function renderMenuItems(r) {
+  const list = document.getElementById('menuList');
+  list.innerHTML = '';
+  r.menu.forEach(item => {
+    const qty = cart[item.id]?.qty || 0;
+    const div = document.createElement('div');
+    div.className = 'menu-item';
+    div.id = 'mi-' + item.id;
+    div.innerHTML = `
+      <span class="mi-emoji">${item.emoji}</span>
+      <div class="mi-info"><div class="mi-name">${item.name}</div><div class="mi-desc">${item.desc}</div></div>
+      <span class="mi-price">SAR ${item.price}</span>
+      <div class="mi-ctrl">
+        <button class="qty-btn" onclick="changeQty('${item.id}','${r.id}',-1)">−</button>
+        <span class="qty-num" id="qn-${item.id}">${qty}</span>
+        <button class="qty-btn" onclick="changeQty('${item.id}','${r.id}',1)">+</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function changeQty(itemId, restId, delta) {
+  const rest = RESTAURANTS.find(r => r.id === restId);
+  const item = rest.menu.find(i => i.id === itemId);
+  if (!cart[itemId]) cart[itemId] = { item, qty: 0, restaurant: rest };
+  cart[itemId].qty = Math.max(0, cart[itemId].qty + delta);
+  if (cart[itemId].qty === 0) delete cart[itemId];
+  const el = document.getElementById('qn-' + itemId);
+  if (el) el.textContent = cart[itemId]?.qty || 0;
+  updateFab();
+}
+
+function updateFab() {
+  const items = Object.values(cart);
+  const count = items.reduce((s,c) => s+c.qty, 0);
+  const total = items.reduce((s,c) => s+c.qty*c.item.price, 0);
+  const fab = document.getElementById('cartFab');
+  if(count > 0) fab.classList.add('visible'); else fab.classList.remove('visible');
+  document.getElementById('fabCount').textContent = count;
+  document.getElementById('fabTotal').textContent = 'SAR ' + total;
+}
+
+// ─── CART ────────────────────────────────────
+function openCart() {
+  renderCartSheet();
+  document.getElementById('cartSheet').classList.add('open');
+}
+function closeCart() { document.getElementById('cartSheet').classList.remove('open'); }
+
+function renderCartSheet() {
+  const list = document.getElementById('cartList');
+  list.innerHTML = '';
+  let total = 0;
+  Object.entries(cart).forEach(([id, c]) => {
+    total += c.qty * c.item.price;
+    const row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = `
+      <span class="cr-emoji">${c.item.emoji}</span>
+      <div class="cr-info">
+        <div class="cr-name">${c.item.name} ×${c.qty}</div>
+        <div class="cr-rest">${c.restaurant.name}</div>
+      </div>
+      <button class="cr-remove" onclick="removeFromCart('${id}')">✕</button>
+      <span class="cr-price">SAR ${c.qty * c.item.price}</span>`;
+    list.appendChild(row);
+  });
+  document.getElementById('cartTotalAmt').textContent = 'SAR ' + total;
+}
+
+function removeFromCart(id) {
+  delete cart[id];
+  updateFab();
+  renderCartSheet();
+  const el = document.getElementById('qn-' + id);
+  if(el) el.textContent = '0';
+}
+
+// ─── CONFIRMATION SCREEN ─────────────────────
+function showConfirmScreen() {
+  if(Object.keys(cart).length === 0) return;
+  closeCart();
+  const items = Object.values(cart);
+  const total = items.reduce((s,c) => s+c.qty*c.item.price, 0);
+  const notes = document.getElementById('notesInput').value.trim();
+
+  document.getElementById('confirmTableDisplay').textContent = 'Table ' + tableId;
+  const itemList = document.getElementById('confirmItemList');
+  itemList.innerHTML = '';
+  items.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'confirm-item-row';
+    row.innerHTML = `
+      <div class="cir-left">${c.item.emoji} ${c.item.name} ×${c.qty}<span class="cir-rest">${c.restaurant.name}</span></div>
+      <span style="font-weight:700;font-size:.85rem;">SAR ${c.qty*c.item.price}</span>`;
+    itemList.appendChild(row);
+  });
+  document.getElementById('confirmTotal').textContent = 'SAR ' + total;
+  const notesDisplay = document.getElementById('confirmNotesDisplay');
+  if(notes) {
+    notesDisplay.textContent = '📝 ' + notes;
+    notesDisplay.style.display = 'block';
+  } else {
+    notesDisplay.style.display = 'none';
+  }
+  showScreen('confirm');
+}
+
+// ─── PLACE ORDER ─────────────────────────────
+async function placeOrder() {
+  const items = Object.values(cart);
+  if(!items.length) return;
+  const btn = document.getElementById('placeBtn');
+  btn.disabled = true;
+  btn.textContent = 'Placing…';
+
+  // Re-check paused
+  if(allPaused) {
+    showToast('⏸ Ordering is currently paused.','red');
+    btn.disabled = false;
+    btn.textContent = '🚀 Place Order';
+    return;
+  }
+
+  try {
+    const now = new Date();
+    // Saudi Arabia date key
+    const saDate = new Date(now.toLocaleString('en-US',{timeZone:'Asia/Riyadh'}));
+    const dayKey = saDate.getFullYear()+'-'+String(saDate.getMonth()+1).padStart(2,'0')+'-'+String(saDate.getDate()).padStart(2,'0');
+    const notes = document.getElementById('notesInput').value.trim();
+
+    const byRest = {};
+    items.forEach(c => {
+      if(!byRest[c.restaurant.id]) byRest[c.restaurant.id] = {name:c.restaurant.name,emoji:c.restaurant.emoji,items:[]};
+      byRest[c.restaurant.id].items.push({id:c.item.id,name:c.item.name,emoji:c.item.emoji,price:c.item.price,qty:c.qty});
+    });
+
+    // Get next order number
+    const counterRef = db.ref('meta/orderCounter');
+    let orderNum = 100;
+    await counterRef.transaction(cur => (cur || 99) + 1).then(res => { orderNum = res.snapshot.val(); });
+
+    const orderId = 'DX-' + orderNum;
+    const orderData = {
+      orderId,
+      orderNum,
+      table: tableId,
+      status: 'pending',
+      items: items.map(c => ({id:c.item.id,name:c.item.name,emoji:c.item.emoji,price:c.item.price,qty:c.qty,restaurant:c.restaurant.name,restaurantId:c.restaurant.id})),
+      byRest,
+      total: items.reduce((s,c) => s+c.qty*c.item.price, 0),
+      notes: notes || '',
+      placedAt: now.toISOString(),
+      placedTs: firebase.database.ServerValue.TIMESTAMP,
+      dayKey,
+      cancelledAt: null,
+      acceptedAt: null,
+      deliveredAt: null,
+    };
+
+    const ref = db.ref('orders/' + orderId);
+    await ref.set(orderData);
+    currentOrderId = orderId;
+    cart = {};
+    document.getElementById('notesInput').value = '';
+    updateFab();
+    showOrderTracking(orderData);
+    listenToOrder(orderId);
+    showToast('🎉 Order ' + orderId + ' placed!', 'yellow');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ Failed to place order. Try again.','red');
+  }
+
+  // Re-enable after 4 seconds regardless
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Place Order';
+  }, 4000);
+}
+
+// ─── TRACKING ────────────────────────────────
+function showOrderTracking(order) {
+  document.getElementById('trackId').textContent = order.orderId;
+  const placed = new Date(order.placedAt);
+  document.getElementById('trackMeta').innerHTML = `
+    <span class="meta-chip">🪑 Table ${order.table}</span>
+    <span class="meta-chip">🕐 ${placed.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+    <span class="meta-chip">💰 SAR ${order.total}</span>
+    <span class="meta-chip">💵 Cash on Delivery</span>`;
+  renderSummaryCard(order);
+  updateStepper('pending');
+  showScreen('tracking');
+}
+
+function renderSummaryCard(order) {
+  const sc = document.getElementById('summaryCard');
+  const rows = order.items.map(i => `<div class="sc-row"><span>${i.emoji} ${i.name} ×${i.qty}</span><span>SAR ${i.price*i.qty}</span></div>`).join('');
+  const notesHtml = order.notes ? `<div class="sc-notes">📝 ${order.notes}</div>` : '';
+  sc.innerHTML = `<div class="sc-title">Order Details</div>${rows}${notesHtml}<div class="sc-total"><span>Total</span><span>SAR ${order.total}</span></div>`;
+}
+
+function updateStepper(status) {
+  const states = ['pending','preparing','delivered'];
+  const icons = ['📋','👨‍🍳','✅'];
+  const labels = ['Pending','Preparing','Delivered'];
+  const idx = states.indexOf(status);
+  states.forEach((s,i) => {
+    document.getElementById('dot'+i).className = 'step-dot'+(i<idx?' done':i===idx?' active':'');
+    document.getElementById('dot'+i).textContent = icons[i];
+    document.getElementById('lbl'+i).className = 'step-lbl'+(i<idx?' done':i===idx?' active':'');
+    document.getElementById('lbl'+i).textContent = labels[i];
+    if(i < 2) document.getElementById('line'+i).className = 'step-line'+(i<idx?' done':'');
+  });
+  const msgs = {
+    pending:'📋 Order placed! Waiting to be accepted…',
+    preparing:'👨‍🍳 Your food is being prepared!',
+    delivered:'✅ Delivered! Enjoy your meal 🎉',
+    cancelled:'❌ This order was cancelled. Please speak to a staff member.',
+  };
+  const banner = document.getElementById('statusBanner');
+  banner.textContent = msgs[status] || '';
+  banner.className = 'status-banner ' + (status === 'preparing' ? 'preparing' : status === 'delivered' ? 'delivered' : status === 'cancelled' ? 'cancelled' : '');
+}
+
+function listenToOrder(orderId) {
+  if(orderListener) orderListener();
+  const ref = db.ref('orders/' + orderId + '/status');
+  const fn = ref.on('value', snap => {
+    const s = snap.val();
+    if(!s) return;
+    updateStepper(s);
+    const map = {preparing:['👨‍🍳 Your order is being prepared!','blue'],delivered:['✅ Order delivered! Enjoy!','green'],cancelled:['❌ Order cancelled','red']};
+    if(map[s]) showToast(...map[s]);
+  });
+  orderListener = () => ref.off('value', fn);
+}
+
+function startNewOrder() {
+  if(orderListener) { orderListener(); orderListener = null; }
+  currentOrderId = null; cart = {};
+  updateFab();
+  buildRestaurantGrid();
+  showScreen('restaurants');
+}
+
+// ─── CALL WAITER ─────────────────────────────
+async function callWaiter() {
+  const btn = document.getElementById('callWaiterBtn');
+  btn.disabled = true;
+  try {
+    await db.ref('waiterCalls').push({
+      table: tableId,
+      message: 'Table ' + tableId + ' needs assistance',
+      ts: firebase.database.ServerValue.TIMESTAMP,
+      dismissed: false,
+    });
+    btn.classList.add('sent');
+    btn.textContent = '✅ Waiter Notified';
+    showToast('🛎️ Waiter has been called!','green');
+    setTimeout(() => {
+      btn.classList.remove('sent');
+      btn.textContent = '🛎️ Call Waiter';
+      btn.disabled = false;
+    }, 20000);
+  } catch(e) {
+    showToast('Failed to call waiter','red');
+    btn.disabled = false;
+  }
+}
+
+// ─── SCREEN NAV ──────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+// ─── TOAST ───────────────────────────────────
+function showToast(msg, type='yellow') {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+init();
+</script>
+
+</body>
+</html>
