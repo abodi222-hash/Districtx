@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DISTRICT X — Staff</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<!-- SheetJS for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f0f0f0;color:#111;font-size:14px;}
+button{cursor:pointer;}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#1B2A4A;}
+.login-box{background:#fff;padding:2rem;width:320px;border-top:5px solid #F5C518;}
+.login-box h1{font-size:1.5rem;margin-bottom:.25rem;color:#1B2A4A;}
+.login-box p{font-size:.8rem;color:#666;margin-bottom:1.25rem;}
+.login-box input{width:100%;border:2px solid #ccc;padding:.6rem .75rem;font-size:.95rem;margin-bottom:.75rem;outline:none;}
+.login-box input:focus{border-color:#1B2A4A;}
+.login-box button{width:100%;background:#1B2A4A;color:#fff;border:none;padding:.7rem;font-size:1rem;font-weight:700;}
+.login-box button:hover{background:#2d4a7a;}
+.login-err{color:#E8412A;font-size:.8rem;margin-top:.4rem;display:none;}
+
+/* APP */
+#appScreen{display:none;min-height:100vh;}
+
+/* TOP BAR */
+.topbar{background:#1B2A4A;color:#fff;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.topbar-left{display:flex;align-items:center;gap:.75rem;}
+.topbar h1{font-size:1.1rem;font-weight:700;color:#F5C518;}
+.role-tag{background:#F5C518;color:#1B2A4A;font-size:.72rem;font-weight:700;padding:.18rem .55rem;text-transform:uppercase;}
+.role-tag.waiter{background:#E8412A;color:#fff;}
+.topbar-right{display:flex;align-items:center;gap:.5rem;}
+.topbar button{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;padding:.28rem .65rem;font-size:.75rem;}
+.topbar button:hover{background:rgba(255,255,255,.1);}
+.clock{font-size:.78rem;color:rgba(255,255,255,.5);}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:2px solid #ddd;overflow-x:auto;}
+.tab{padding:.6rem 1rem;background:none;border:none;font-size:.85rem;font-weight:700;color:#666;border-bottom:3px solid transparent;white-space:nowrap;flex-shrink:0;}
+.tab.active{color:#1B2A4A;border-bottom-color:#F5C518;}
+.tab:hover:not(.active){background:#f5f5f5;}
+
+/* PANELS */
+.panel{display:none;padding:.75rem;}
+.panel.active{display:block;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin-bottom:.75rem;}
+.stat{background:#fff;border:1px solid #ddd;padding:.7rem .85rem;border-left:4px solid #ccc;}
+.stat.yellow{border-left-color:#F5C518;}
+.stat.red{border-left-color:#E8412A;}
+.stat.green{border-left-color:#27AE60;}
+.stat.blue{border-left-color:#5B8DD9;}
+.stat-num{font-size:1.6rem;font-weight:900;color:#111;line-height:1;}
+.stat-lbl{font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-top:.1rem;}
+
+/* FILTERS */
+.filters{background:#fff;border:1px solid #ddd;padding:.6rem .75rem;margin-bottom:.6rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;}
+.filters label{font-size:.75rem;font-weight:700;color:#555;}
+.filters select,.filters input{border:1px solid #ccc;padding:.28rem .5rem;font-size:.78rem;outline:none;background:#fff;}
+.filters select:focus,.filters input:focus{border-color:#1B2A4A;}
+.btn-sm{background:#1B2A4A;color:#fff;border:none;padding:.3rem .75rem;font-size:.75rem;font-weight:700;}
+.btn-sm:hover{background:#2d4a7a;}
+.btn-sm.red{background:#E8412A;}
+.btn-sm.green{background:#27AE60;}
+.btn-sm.yellow{background:#F5C518;color:#1B2A4A;}
+.btn-sm.orange{background:#F39C12;}
+
+/* ORDER CARDS */
+.order-list{display:flex;flex-direction:column;gap:.5rem;}
+.order-card{background:#fff;border:1px solid #ddd;border-left:4px solid #ccc;padding:.7rem .85rem;position:relative;}
+.order-card.pending{border-left-color:#F5C518;}
+.order-card.preparing{border-left-color:#F39C12;}
+.order-card.delivered{border-left-color:#27AE60;background:#f9fdf9;}
+.order-card.cancelled{border-left-color:#E8412A;background:#fff5f5;opacity:.75;}
+.order-card.delayed{border-left-color:#9B59B6;background:#fdf5ff;}
+.oc-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.35rem;margin-bottom:.4rem;}
+.oc-id{font-size:1.2rem;font-weight:900;color:#1B2A4A;letter-spacing:.02em;}
+.oc-meta{font-size:.72rem;color:#666;margin-top:.1rem;}
+.status-badge{font-size:.68rem;font-weight:700;padding:.18rem .55rem;text-transform:uppercase;letter-spacing:.04em;}
+.sb-pending{background:#FFF3CC;color:#856404;border:1px solid #F5C518;}
+.sb-preparing{background:#FFF0D4;color:#7D4E00;border:1px solid #F39C12;}
+.sb-delivered{background:#D4EDDA;color:#155724;border:1px solid #27AE60;}
+.sb-cancelled{background:#F8D7DA;color:#721C24;border:1px solid #E8412A;}
+.sb-delayed{background:#EDE1FF;color:#4A0C78;border:1px solid #9B59B6;}
+.oc-items{font-size:.78rem;color:#333;line-height:1.7;margin:.3rem 0;}
+.oc-notes{font-size:.73rem;color:#777;font-style:italic;margin:.2rem 0;}
+.oc-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem;margin-top:.4rem;}
+.oc-total{font-size:1rem;font-weight:900;color:#1B2A4A;}
+.oc-actions{display:flex;gap:.35rem;flex-wrap:wrap;}
+.delayed-badge{font-size:.68rem;background:#9B59B6;color:#fff;padding:.15rem .45rem;margin-left:.35rem;}
+
+/* WAITER CALLS */
+.call-card{background:#fff3cd;border:1px solid #F5C518;border-left:4px solid #E8412A;padding:.6rem .8rem;margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.35rem;}
+.call-card .call-info{font-size:.85rem;font-weight:700;}
+.call-card .call-time{font-size:.7rem;color:#666;}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.75rem;}
+.a-card{background:#fff;border:1px solid #ddd;padding:.85rem;}
+.a-card h3{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#555;margin-bottom:.7rem;padding-bottom:.4rem;border-bottom:1px solid #eee;}
+.bar-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem;}
+.bar-label{font-size:.75rem;font-weight:700;width:110px;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;background:#f0f0f0;height:22px;position:relative;}
+.bar-fill{height:100%;background:#1B2A4A;display:flex;align-items:center;padding-left:.4rem;font-size:.7rem;font-weight:700;color:#fff;transition:width .6s ease;min-width:2px;}
+.rest-revenue-row{display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid #f0f0f0;font-size:.82rem;}
+.day-selector{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.75rem;align-items:center;}
+.day-selector label{font-size:.75rem;font-weight:700;color:#555;}
+.day-selector select{border:1px solid #ccc;padding:.28rem .5rem;font-size:.78rem;}
+.export-btn{background:#27AE60;color:#fff;border:none;padding:.35rem .85rem;font-size:.78rem;font-weight:700;}
+.export-btn:hover{background:#1e8449;}
+
+/* PAUSE CONTROLS */
+.pause-section{background:#fff;border:1px solid #ddd;padding:.85rem;margin-bottom:.75rem;}
+.pause-section h3{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#555;margin-bottom:.6rem;}
+.pause-grid{display:flex;flex-wrap:wrap;gap:.4rem;}
+.pause-item{display:flex;align-items:center;gap:.35rem;background:#f5f5f5;border:1px solid #ddd;padding:.35rem .6rem;font-size:.78rem;}
+.pause-toggle{position:relative;width:34px;height:18px;flex-shrink:0;}
+.pause-toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:9px;cursor:pointer;transition:background .2s;}
+.toggle-slider::before{content:’’;position:absolute;width:14px;height:14px;left:2px;top:2px;background:#fff;border-radius:50%;transition:transform .2s;}
+.pause-toggle input:checked + .toggle-slider{background:#E8412A;}
+.pause-toggle input:checked + .toggle-slider::before{transform:translateX(16px);}
+
+/* NOTIFY BANNER */
+.notify-banner{background:#E8412A;color:#fff;text-align:center;padding:.5rem;font-size:.85rem;font-weight:700;display:none;}
+.notify-banner.show{display:block;animation:notifyPulse 1s ease 3;}
+@keyframes notifyPulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem;color:#aaa;font-size:.85rem;}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:55px;right:.75rem;z-index:999;display:flex;flex-direction:column;gap:.3rem;pointer-events:none;}
+.toast{background:#1B2A4A;border-left:4px solid #F5C518;color:#fff;padding:.5rem .8rem;font-size:.8rem;max-width:260px;animation:toastIn .2s ease;}
+.toast.green{border-left-color:#27AE60;}
+.toast.red{border-left-color:#E8412A;}
+@keyframes toastIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:#ccc;}
+</style>
+
+</head>
+<body>
+
+<!-- LOGIN -->
+
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>DISTRICT X</h1>
+    <p>Staff Portal — Food &amp; Beverages</p>
+    <input type="text" id="usernameInput" placeholder="Enter staff code" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+    <button onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="loginErr">Invalid staff code. Try again.</div>
+  </div>
+</div>
+
+<!-- APP -->
+
+<div id="appScreen">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>DISTRICT X</h1>
+      <span class="role-tag" id="roleTag">–</span>
+    </div>
+    <div class="topbar-right">
+      <span class="clock" id="clockDisplay"></span>
+      <button onclick="doLogout()">Log Out</button>
+    </div>
+  </div>
+  <div class="notify-banner" id="notifyBanner">🔔 New order received!</div>
+  <div class="tabs" id="tabBar"></div>
+  <div id="panelContainer"></div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+// ─── FIREBASE CONFIG ─────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAdQKAD2ORPRnlxtIU01ErQtUl8DNg2brc",
+  authDomain: "district-x-test.firebaseapp.com",
+  databaseURL: "https://district-x-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "district-x-test",
+  storageBucket: "district-x-test.firebasestorage.app",
+  messagingSenderId: "532943192712",
+  appId: "1:532943192712:web:90e487d935c93d5eef953d"
+};
+
+// ─── CREDENTIALS ─────────────────────────────
+const STAFF_CODES = {
+  'DX-OPS01': 'admin',
+  'DX-FLOOR1': 'waiter',
+};
+
+const RESTAURANTS = [
+  {id:'r1',name:'Burger District',emoji:'🍔'},
+  {id:'r2',name:'Taco Stand',emoji:'🌮'},
+  {id:'r3',name:'Noodle House',emoji:'🍜'},
+  {id:'r4',name:'Pizzeria X',emoji:'🍕'},
+  {id:'r5',name:'Lemonade Co.',emoji:'🍋'},
+  {id:'r6',name:'Smoke & Grill',emoji:'🥩'},
+];
+
+// ─── STATE ───────────────────────────────────
+let db = null, role = null;
+let allOrders = {}, waiterCalls = {};
+let currentTab = '';
+let filterStatus = 'all', filterTable = '', filterRest = 'all';
+let waiterFilterStatus = 'active';
+let selectedDay = '';
+let delayCheckInterval = null;
+
+// ─── LOGIN ───────────────────────────────────
+function doLogin() {
+  const code = document.getElementById('usernameInput').value.trim();
+  const r = STAFF_CODES[code];
+  if (!r) { document.getElementById('loginErr').style.display='block'; return; }
+  role = r;
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('roleTag').textContent = r === 'admin' ? 'Admin' : 'Waiter';
+  document.getElementById('roleTag').className = 'role-tag' + (r==='waiter'?' waiter':'');
+  initFirebase();
+  buildTabs();
+  startClock();
+}
+document.getElementById('usernameInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  if(delayCheckInterval) clearInterval(delayCheckInterval);
+  role = null; allOrders = {}; waiterCalls = {};
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('usernameInput').value='';
+}
+
+// ─── FIREBASE ────────────────────────────────
+function initFirebase() {
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.database();
+
+  db.ref('orders').on('value', snap => {
+    allOrders = snap.val() || {};
+    renderCurrentTab();
+    if(role==='admin') updateAdminStats();
+  });
+
+  db.ref('waiterCalls').on('value', snap => {
+    waiterCalls = snap.val() || {};
+    if(role==='waiter'||role==='admin') renderCurrentTab();
+  });
+
+  // New order notification for waiter
+  db.ref('orders').on('child_added', snap => {
+    const o = snap.val();
+    if(!o) return;
+    const banner = document.getElementById('notifyBanner');
+    banner.textContent = '🔔 New order: ' + o.orderId + ' — Table ' + o.table;
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 5000);
+    showToast('🔔 New: ' + o.orderId + ' Table ' + o.table, 'yellow');
+  });
+
+  // Delay checker: every 60s
+  delayCheckInterval = setInterval(checkDelays, 60000);
+}
+
+// ─── CLOCK ───────────────────────────────────
+function startClock() {
+  function tick() {
+    const now = new Date().toLocaleString('en-US',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    document.getElementById('clockDisplay').textContent = now + ' (AST)';
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+// ─── TABS ────────────────────────────────────
+function buildTabs() {
+  const tabBar = document.getElementById('tabBar');
+  const container = document.getElementById('panelContainer');
+  tabBar.innerHTML = ''; container.innerHTML = '';
+
+  const tabs = role === 'admin'
+    ? [['overview','📊 Overview'],['orders','📋 Orders'],['analytics','📈 Analytics'],['pause','⏸ Pause Control'],['calls','🛎️ Waiter Calls']]
+    : [['queue','📋 Queue'],['delivered','✅ Delivered'],['calls','🛎️ Calls']];
+
+  tabs.forEach(([id, label], i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i===0?' active':'');
+    btn.textContent = label;
+    btn.onclick = () => switchTab(id, btn);
+    tabBar.appendChild(btn);
+
+    const panel = document.createElement('div');
+    panel.id = 'panel-' + id;
+    panel.className = 'panel' + (i===0?' active':'');
+    container.appendChild(panel);
+  });
+
+  currentTab = tabs[0][0];
+  renderCurrentTab();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+  currentTab = id;
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  switch(currentTab) {
+    case 'overview': renderAdminOverview(); break;
+    case 'orders': renderAdminOrders(); break;
+    case 'analytics': renderAnalytics(); break;
+    case 'pause': renderPauseControl(); break;
+    case 'queue': renderWaiterQueue(); break;
+    case 'delivered': renderWaiterDelivered(); break;
+    case 'calls': renderCalls(); break;
+  }
+}
+
+// ─── HELPERS ─────────────────────────────────
+function getSARiyadhDayKey(ts) {
+  const d = new Date(ts);
+  const s = d.toLocaleString('en-US',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'});
+  const [m,dy,y] = s.split('/');
+  return y+'-'+m.padStart(2,'0')+'-'+dy.padStart(2,'0');
+}
+
+function getTodayKey() { return getSARiyadhDayKey(Date.now()); }
+
+function getOrders(statusFilter='all', tableFilter='', restFilter='all', dayFilter='') {
+  return Object.values(allOrders).filter(o => {
+    if(statusFilter !== 'all' && o.status !== statusFilter) return false;
+    if(tableFilter && String(o.table) !== String(tableFilter)) return false;
+    if(restFilter !== 'all' && !o.items?.some(i => i.restaurantId === restFilter)) return false;
+    if(dayFilter && o.dayKey !== dayFilter) return false;
+    return true;
+  }).sort((a,b) => (b.placedTs||0) - (a.placedTs||0));
+}
+
+function isDelayed(order) {
+  if(order.status === 'delivered' || order.status === 'cancelled') return false;
+  const age = Date.now() - (order.placedTs || Date.parse(order.placedAt));
+  return age > 20 * 60 * 1000; // 20 minutes
+}
+
+function checkDelays() {
+  const delayed = Object.values(allOrders).filter(isDelayed);
+  if(delayed.length > 0) showToast('⚠️ ' + delayed.length + ' order(s) delayed 20+ min', 'red');
+}
+
+function fmtTime(iso) {
+  if(!iso) return '–';
+  return new Date(iso).toLocaleTimeString('en-US',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+
+function fmtAge(order) {
+  const ms = Date.now() - (order.placedTs || Date.parse(order.placedAt));
+  const m = Math.floor(ms/60000);
+  return m + 'm ago';
+}
+
+function statusBadge(s) {
+  const map = {pending:'sb-pending',preparing:'sb-preparing',delivered:'sb-delivered',cancelled:'sb-cancelled'};
+  const labels = {pending:'Pending',preparing:'Preparing',delivered:'Delivered',cancelled:'Cancelled'};
+  return `<span class="status-badge ${map[s]||''}">${labels[s]||s}</span>`;
+}
+
+function uniqueDays() {
+  const days = [...new Set(Object.values(allOrders).map(o=>o.dayKey).filter(Boolean))];
+  return days.sort().reverse();
+}
+
+// ─── ADMIN OVERVIEW ──────────────────────────
+function updateAdminStats() {
+  const todayKey = getTodayKey();
+  const todayOrders = Object.values(allOrders).filter(o => o.dayKey === todayKey);
+  const revenue = todayOrders.filter(o => o.status==='delivered').reduce((s,o) => s+o.total, 0);
+  const active = todayOrders.filter(o => o.status==='pending'||o.status==='preparing').length;
+  const delivered = todayOrders.filter(o => o.status==='delivered').length;
+  const cancelled = todayOrders.filter(o => o.status==='cancelled').length;
+  return { total:todayOrders.length, revenue, active, delivered, cancelled };
+}
+
+function renderAdminOverview() {
+  const p = document.getElementById('panel-overview');
+  if(!p) return;
+  const s = updateAdminStats();
+  const todayKey = getTodayKey();
+  const live = getOrders('all','','all',todayKey).filter(o=>o.status!=='delivered'&&o.status!=='cancelled');
+  const delayed = live.filter(isDelayed);
+
+  p.innerHTML = `
+    <div class="stats-row">
+      <div class="stat yellow"><div class="stat-num">${s.total}</div><div class="stat-lbl">Today Orders</div></div>
+      <div class="stat red"><div class="stat-num">${s.active}</div><div class="stat-lbl">Active</div></div>
+      <div class="stat green"><div class="stat-num">${s.delivered}</div><div class="stat-lbl">Delivered</div></div>
+      <div class="stat blue"><div class="stat-num">SAR ${s.revenue}</div><div class="stat-lbl">Revenue Today</div></div>
+      ${delayed.length>0?`<div class="stat" style="border-left-color:#9B59B6"><div class="stat-num" style="color:#9B59B6">${delayed.length}</div><div class="stat-lbl">⚠️ Delayed</div></div>`:''}
+    </div>
+    <h3 style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#555;margin-bottom:.5rem;">⚡ Live Active Orders</h3>
+    <div class="order-list" id="liveOrderList">
+      ${live.length===0?'<div class="empty">No active orders right now</div>':''}
+    </div>`;
+
+  const listEl = p.querySelector('#liveOrderList');
+  if(live.length > 0) {
+    live.forEach(o => {
+      const card = buildOrderCard(o, 'admin');
+      listEl.appendChild(card);
+    });
+  }
+}
+
+// ─── ADMIN ORDERS ────────────────────────────
+function renderAdminOrders() {
+  const p = document.getElementById('panel-orders');
+  if(!p) return;
+  const days = uniqueDays();
+  if(!selectedDay) selectedDay = getTodayKey();
+
+  p.innerHTML = `
+    <div class="filters">
+      <label>Day:</label>
+      <select id="filterDay" onchange="selectedDay=this.value;renderAdminOrders()">
+        ${days.map(d=>`<option value="${d}"${d===selectedDay?' selected':''}>${d}</option>`).join('')}
+        ${days.length===0?`<option value="${getTodayKey()}">${getTodayKey()}</option>`:''}
+      </select>
+      <label>Status:</label>
+      <select id="filterStatus" onchange="filterStatus=this.value;renderAdminOrders()">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="preparing">Preparing</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <label>Table:</label>
+      <input type="number" id="filterTable" placeholder="Any" min="1" max="50" style="width:60px" value="${filterTable}"
+        oninput="filterTable=this.value;renderAdminOrders()"/>
+      <label>Restaurant:</label>
+      <select id="filterRest" onchange="filterRest=this.value;renderAdminOrders()">
+        <option value="all">All</option>
+        ${RESTAURANTS.map(r=>`<option value="${r.id}">${r.emoji} ${r.name}</option>`).join('')}
+      </select>
+      <button class="btn-sm" onclick="filterStatus='all';filterTable='';filterRest='all';renderAdminOrders()">Reset</button>
+      <button class="export-btn" onclick="exportExcel()">📥 Export Excel</button>
+    </div>
+    <div class="order-list" id="adminOrderList"></div>`;
+
+  const orders = getOrders(filterStatus, filterTable, filterRest, selectedDay);
+  const listEl = p.querySelector('#adminOrderList');
+  if(orders.length === 0) { listEl.innerHTML='<div class="empty">No orders match these filters</div>'; return; }
+  orders.forEach(o => listEl.appendChild(buildOrderCard(o, 'admin')));
+}
+
+// ─── ORDER CARD ───────────────────────────────
+function buildOrderCard(order, view) {
+  const card = document.createElement('div');
+  const delayed = isDelayed(order);
+  card.className = `order-card ${order.status}${delayed?' delayed':''}`;
+
+  const itemsHtml = (order.items||[]).map(i=>`${i.emoji||''} ${i.name} ×${i.qty} <span style="color:#888;font-size:.7rem;">(${i.restaurant})</span>`).join('<br>');
+  const notesHtml = order.notes ? `<div class="oc-notes">📝 ${order.notes}</div>` : '';
+  const delayedTag = delayed ? `<span class="delayed-badge">⚠️ 20+ min</span>` : '';
+  const age = fmtAge(order);
+
+  let actions = '';
+  if(view === 'waiter') {
+    if(order.status === 'pending') actions = `<button class="btn-sm green" onclick="acceptOrder('${order.orderId}')">✅ Accept</button>`;
+    if(order.status === 'preparing') actions = `<button class="btn-sm yellow" onclick="deliverOrder('${order.orderId}')">🚚 Mark Delivered</button>`;
+  }
+  if(view === 'admin') {
+    if(order.status !== 'delivered' && order.status !== 'cancelled') {
+      actions = `<button class="btn-sm red" onclick="cancelOrder('${order.orderId}')">✕ Cancel</button>`;
+      if(order.status==='pending') actions += ` <button class="btn-sm green" onclick="acceptOrder('${order.orderId}')">✅ Accept</button>`;
+      if(order.status==='preparing') actions += ` <button class="btn-sm yellow" onclick="deliverOrder('${order.orderId}')">🚚 Deliver</button>`;
+    }
+  }
+
+  card.innerHTML = `
+    <div class="oc-head">
+      <div>
+        <span class="oc-id">${order.orderId}${delayedTag}</span>
+        <div class="oc-meta">🪑 Table ${order.table} &nbsp;·&nbsp; 🕐 ${fmtTime(order.placedAt)} &nbsp;·&nbsp; ${age}</div>
+      </div>
+      ${statusBadge(order.status)}
+    </div>
+    <div class="oc-items">${itemsHtml}</div>
+    ${notesHtml}
+    <div class="oc-footer">
+      <span class="oc-total">SAR ${order.total}</span>
+      <div class="oc-actions">${actions}</div>
+    </div>`;
+  return card;
+}
+
+// ─── WAITER QUEUE ─────────────────────────────
+function renderWaiterQueue() {
+  const p = document.getElementById('panel-queue');
+  if(!p) return;
+  const todayKey = getTodayKey();
+
+  p.innerHTML = `
+    <div class="filters">
+      <label>Filter:</label>
+      <select onchange="waiterFilterStatus=this.value;renderWaiterQueue()">
+        <option value="active">Active (Pending + Preparing)</option>
+        <option value="pending">Pending only</option>
+        <option value="preparing">Preparing only</option>
+      </select>
+      <label>Table:</label>
+      <input type="number" placeholder="Any" min="1" max="50" style="width:60px"
+        oninput="filterTable=this.value;renderWaiterQueue()"/>
+      <button class="btn-sm" onclick="filterTable='';renderWaiterQueue()">Reset</button>
+    </div>
+    <div class="order-list" id="waiterQueueList"></div>`;
+
+  let orders = Object.values(allOrders)
+    .filter(o => o.dayKey === todayKey)
+    .filter(o => waiterFilterStatus==='active' ? (o.status==='pending'||o.status==='preparing') : o.status===waiterFilterStatus)
+    .filter(o => filterTable ? String(o.table)===String(filterTable) : true)
+    .sort((a,b) => (a.placedTs||0)-(b.placedTs||0));
+
+  const listEl = p.querySelector('#waiterQueueList');
+  if(orders.length===0) { listEl.innerHTML='<div class="empty">No active orders</div>'; return; }
+  orders.forEach(o => listEl.appendChild(buildOrderCard(o,'waiter')));
+}
+
+// ─── WAITER DELIVERED ─────────────────────────
+function renderWaiterDelivered() {
+  const p = document.getElementById('panel-delivered');
+  if(!p) return;
+  const todayKey = getTodayKey();
+  const orders = Object.values(allOrders)
+    .filter(o => o.dayKey===todayKey && o.status==='delivered')
+    .sort((a,b) => (b.deliveredAt||b.placedTs||0)-(a.deliveredAt||a.placedTs||0));
+  const total = orders.reduce((s,o)=>s+o.total,0);
+
+  p.innerHTML = `
+    <div style="background:#fff;border:1px solid #ddd;padding:.6rem .8rem;margin-bottom:.6rem;font-size:.82rem;font-weight:700;">
+      ✅ ${orders.length} delivered today &nbsp;·&nbsp; SAR ${total} collected
+    </div>
+    <div class="order-list" id="waiterDeliveredList"></div>`;
+
+  const listEl = p.querySelector('#waiterDeliveredList');
+  if(orders.length===0) { listEl.innerHTML='<div class="empty">No delivered orders today</div>'; return; }
+  orders.forEach(o => {
+    const card = buildOrderCard(o,'waiter');
+    listEl.appendChild(card);
+  });
+}
+
+// ─── CALLS ────────────────────────────────────
+function renderCalls() {
+  const p = document.getElementById('panel-calls');
+  if(!p) return;
+  const calls = Object.entries(waiterCalls)
+    .filter(([,c]) => !c.dismissed)
+    .sort(([,a],[,b]) => (b.ts||0)-(a.ts||0));
+
+  p.innerHTML = `<h3 style="font-size:.82rem;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:.6rem;">🛎️ Active Waiter Calls</h3>
+    <div id="callsList"></div>`;
+
+  const listEl = p.querySelector('#callsList');
+  if(calls.length===0) { listEl.innerHTML='<div class="empty">No active calls</div>'; return; }
+  calls.forEach(([key,c]) => {
+    const card = document.createElement('div');
+    card.className='call-card';
+    const t = c.ts ? new Date(c.ts).toLocaleTimeString('en-US',{timeZone:'Asia/Riyadh',hour:'2-digit',minute:'2-digit'}) : '';
+    card.innerHTML = `
+      <div><div class="call-info">🛎️ ${c.message}</div><div class="call-time">🕐 ${t}</div></div>
+      <button class="btn-sm green" onclick="dismissCall('${key}')">✓ Dismiss</button>`;
+    listEl.appendChild(card);
+  });
+}
+
+function dismissCall(key) {
+  db.ref('waiterCalls/' + key + '/dismissed').set(true);
+  showToast('Call dismissed','green');
+}
+
+// ─── ANALYTICS ────────────────────────────────
+function renderAnalytics() {
+  const p = document.getElementById('panel-analytics');
+  if(!p) return;
+  const days = uniqueDays();
+  if(!selectedDay || !days.includes(selectedDay)) selectedDay = getTodayKey();
+
+  const dayOrders = Object.values(allOrders).filter(o => o.dayKey===selectedDay);
+  const delivered = dayOrders.filter(o=>o.status==='delivered');
+  const totalRev = delivered.reduce((s,o)=>s+o.total,0);
+  const cancelled = dayOrders.filter(o=>o.status==='cancelled').length;
+
+  // Per restaurant
+  const restData = RESTAURANTS.map(r => {
+    const rOrders = delivered.filter(o => o.items?.some(i=>i.restaurantId===r.id));
+    const rev = rOrders.reduce((s,o) => {
+      const items = o.items.filter(i=>i.restaurantId===r.id);
+      return s + items.reduce((ss,i)=>ss+i.price*i.qty,0);
+    },0);
+    const count = dayOrders.filter(o=>o.items?.some(i=>i.restaurantId===r.id)).length;
+    return {...r, orders:count, revenue:rev};
+  }).sort((a,b)=>b.orders-a.orders);
+  const maxOrders = Math.max(...restData.map(r=>r.orders),1);
+
+  // Hourly (Saudi time)
+  const hours = Array.from({length:24},(_,i)=>i);
+  const hourCounts = hours.map(h => dayOrders.filter(o => {
+    if(!o.placedAt) return false;
+    const hr = new Date(o.placedAt).toLocaleString('en-US',{timeZone:'Asia/Riyadh',hour:'numeric',hour12:false});
+    return parseInt(hr)===h;
+  }).length);
+  const activeHours = hours.filter(h=>hourCounts[h]>0);
+  const maxHr = Math.max(...hourCounts,1);
+
+  p.innerHTML = `
+    <div class="day-selector">
+      <label>View Day:</label>
+      <select onchange="selectedDay=this.value;renderAnalytics()">
+        ${days.map(d=>`<option value="${d}"${d===selectedDay?' selected':''}>${d}</option>`).join('')}
+        ${days.length===0?`<option value="${getTodayKey()}">${getTodayKey()}</option>`:''}
+      </select>
+      <button class="export-btn" onclick="exportExcel()">📥 Export Excel</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat yellow"><div class="stat-num">${dayOrders.length}</div><div class="stat-lbl">Total Orders</div></div>
+      <div class="stat green"><div class="stat-num">${delivered.length}</div><div class="stat-lbl">Delivered</div></div>
+      <div class="stat red"><div class="stat-num">${cancelled}</div><div class="stat-lbl">Cancelled</div></div>
+      <div class="stat blue"><div class="stat-num">SAR ${totalRev}</div><div class="stat-lbl">Revenue</div></div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="a-card">
+        <h3>Orders per Restaurant</h3>
+        ${restData.map(r=>`
+          <div class="bar-row">
+            <span class="bar-label">${r.emoji} ${r.name}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(r.orders/maxOrders*100,2)}%">${r.orders}</div></div>
+          </div>`).join('')}
+      </div>
+
+      <div class="a-card">
+        <h3>Revenue per Restaurant (Delivered)</h3>
+        ${restData.map(r=>`<div class="rest-revenue-row"><span>${r.emoji} ${r.name}</span><strong>SAR ${r.revenue}</strong></div>`).join('')}
+        <div class="rest-revenue-row" style="border-top:2px solid #ddd;margin-top:.3rem;font-weight:900;"><span>Total</span><strong>SAR ${totalRev}</strong></div>
+      </div>
+
+      <div class="a-card">
+        <h3>Hourly Order Volume</h3>
+        ${activeHours.length===0?'<div style="color:#aaa;font-size:.8rem;">No hourly data yet</div>':
+          activeHours.map(h=>`
+            <div class="bar-row">
+              <span class="bar-label">${String(h).padStart(2,'0')}:00</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${Math.max(hourCounts[h]/maxHr*100,2)}%">${hourCounts[h]}</div></div>
+            </div>`).join('')}
+      </div>
+
+      <div class="a-card">
+        <h3>All Days Summary</h3>
+        ${days.length===0?'<div style="color:#aaa;font-size:.8rem;">No daily data yet</div>':
+          days.map(d=>{
+            const dOrds = Object.values(allOrders).filter(o=>o.dayKey===d);
+            const dRev = dOrds.filter(o=>o.status==='delivered').reduce((s,o)=>s+o.total,0);
+            return `<div class="rest-revenue-row"><span>${d}</span><span>${dOrds.length} orders &nbsp;·&nbsp; <strong>SAR ${dRev}</strong></span></div>`;
+          }).join('')}
+      </div>
+    </div>`;
+}
+
+// ─── PAUSE CONTROL ────────────────────────────
+function renderPauseControl() {
+  const p = document.getElementById('panel-pause');
+  if(!p) return;
+
+  p.innerHTML = `
+    <div class="pause-section">
+      <h3>Global Control</h3>
+      <div class="pause-item">
+        <label class="pause-toggle">
+          <input type="checkbox" id="pauseAll" onchange="setPauseAll(this.checked)"/>
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-weight:700;">⏸ Pause ALL ordering</span>
+      </div>
+    </div>
+    <div class="pause-section">
+      <h3>Pause Individual Restaurants</h3>
+      <div class="pause-grid" id="restPauseGrid"></div>
+    </div>`;
+
+  // Read current pause state
+  db.ref('settings/paused').once('value', snap => {
+    const data = snap.val() || {};
+    document.getElementById('pauseAll').checked = data.all===true;
+    const grid = document.getElementById('restPauseGrid');
+    grid.innerHTML = '';
+    RESTAURANTS.forEach(r => {
+      const item = document.createElement('div');
+      item.className='pause-item';
+      item.innerHTML = `
+        <label class="pause-toggle">
+          <input type="checkbox" ${data.restaurants?.[r.id]?' checked':''} onchange="setPauseRest('${r.id}',this.checked)"/>
+          <span class="toggle-slider"></span>
+        </label>
+        <span>${r.emoji} ${r.name}</span>`;
+      grid.appendChild(item);
+    });
+  });
+}
+
+function setPauseAll(val) {
+  db.ref('settings/paused/all').set(val);
+  showToast(val ? '⏸ All ordering paused' : '▶️ Ordering resumed', val?'red':'green');
+}
+function setPauseRest(restId, val) {
+  db.ref('settings/paused/restaurants/' + restId).set(val);
+  const r = RESTAURANTS.find(x=>x.id===restId);
+  showToast((val?'⏸ Paused: ':'▶️ Resumed: ')+(r?r.name:restId), val?'red':'green');
+}
+
+// ─── ORDER ACTIONS ────────────────────────────
+function acceptOrder(orderId) {
+  db.ref('orders/' + orderId).update({ status:'preparing', acceptedAt: new Date().toISOString() });
+  showToast('✅ Accepted: ' + orderId, 'green');
+}
+
+function deliverOrder(orderId) {
+  db.ref('orders/' + orderId).update({ status:'delivered', deliveredAt: new Date().toISOString() });
+  showToast('🚚 Delivered: ' + orderId, 'green');
+}
+
+function cancelOrder(orderId) {
+  if(!confirm('Cancel order ' + orderId + '? This cannot be undone.')) return;
+  db.ref('orders/' + orderId).update({ status:'cancelled', cancelledAt: new Date().toISOString() });
+  showToast('❌ Cancelled: ' + orderId, 'red');
+}
+
+// ─── EXPORT EXCEL ─────────────────────────────
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+
+  // All days
+  const days = uniqueDays();
+  if(days.length===0) days.push(getTodayKey());
+
+  // Orders sheet
+  const orderRows = [['Order ID','Table','Status','Items','Notes','Total (SAR)','Placed At','Accepted At','Delivered At','Day']];
+  Object.values(allOrders).sort((a,b)=>a.orderNum-b.orderNum).forEach(o => {
+    const items = (o.items||[]).map(i=>`${i.name} ×${i.qty}`).join(', ');
+    orderRows.push([
+      o.orderId, o.table, o.status, items, o.notes||'',
+      o.total, fmtTime(o.placedAt), fmtTime(o.acceptedAt), fmtTime(o.deliveredAt), o.dayKey
+    ]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(orderRows), 'All Orders');
+
+  // Restaurant summary per day
+  days.forEach(day => {
+    const dayOrds = Object.values(allOrders).filter(o=>o.dayKey===day);
+    const delivered = dayOrds.filter(o=>o.status==='delivered');
+    const rows = [['Restaurant','Total Orders','Delivered','Cancelled','Revenue (SAR)']];
+    RESTAURANTS.forEach(r => {
+      const rAll = dayOrds.filter(o=>o.items?.some(i=>i.restaurantId===r.id));
+      const rDel = delivered.filter(o=>o.items?.some(i=>i.restaurantId===r.id));
+      const rCan = dayOrds.filter(o=>o.status==='cancelled'&&o.items?.some(i=>i.restaurantId===r.id));
+      const rev = rDel.reduce((s,o)=>s+o.items.filter(i=>i.restaurantId===r.id).reduce((ss,i)=>ss+i.price*i.qty,0),0);
+      rows.push([r.emoji+' '+r.name, rAll.length, rDel.length, rCan.length, rev]);
+    });
+    rows.push(['TOTAL', dayOrds.length, delivered.length, dayOrds.filter(o=>o.status==='cancelled').length, delivered.reduce((s,o)=>s+o.total,0)]);
+    const safeDay = day.replace(/-/g,'');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Rest-'+safeDay);
+  });
+
+  // Daily summary sheet
+  const summaryRows = [['Day','Total Orders','Delivered','Cancelled','Revenue (SAR)']];
+  days.forEach(day => {
+    const dayOrds = Object.values(allOrders).filter(o=>o.dayKey===day);
+    const rev = dayOrds.filter(o=>o.status==='delivered').reduce((s,o)=>s+o.total,0);
+    summaryRows.push([day, dayOrds.length, dayOrds.filter(o=>o.status==='delivered').length, dayOrds.filter(o=>o.status==='cancelled').length, rev]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), 'Daily Summary');
+
+  XLSX.writeFile(wb, 'DistrictX-Report-' + getTodayKey() + '.xlsx');
+  showToast('📥 Excel exported!','green');
+}
+
+// ─── TOAST ───────────────────────────────────
+function showToast(msg, type='yellow') {
+  const wrap = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className='toast '+(type==='green'?'green':type==='red'?'red':'');
+  t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300);},3500);
+}
+</script>
+
+</body>
+</html>
